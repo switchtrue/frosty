@@ -62,7 +62,7 @@ Frosty sets environment variables when running jobs for use within scripts that 
     "postgres": {
       "envVars": {
         "PGPASSWORD": "p@ssw0rd"
-      }
+      },
       "script": [
         "pg_dump dbname -U username | gzip > $FROSTY_WORKING_DIRECTORY/postgres_backup.gz"
       ],
