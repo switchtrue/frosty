@@ -5,7 +5,9 @@ There is currently no code for this project! The readme file here is intended in
 # frosty
 A lightweight command line backup utility that stores back ups as archives in Amazon Glacier.
 
-Frosty will run one or more user configurable jobs to execute a backup and then pushing the resulting backup to Amazon Glacier taking advantage of its low storage costs. A "job" is a series of command line tasks to execute resulting in one or more files that can be sent to Amazon Glacier. Frosty takes care of setting environment variables and tidying up after itself to help ensure that now backups are left taking up disk space on the server in which they were run.
+Frosty will run one or more user configurable jobs to execute a backup and then push the resulting  backup to Amazon Glacier taking advantage of its low storage costs. The idea is to keep a single configuration file detailing the various system backups that might be required, executing them all via single command and receiving a single email report on success/failure.
+
+A "job" is a series of command line tasks to execute resulting in one or more files that can be sent to Amazon Glacier. Frosty takes care of setting environment variables and tidying up after itself to help ensure that now backups are left taking up disk space on the server in which they were run.
 
 # Usage
 
