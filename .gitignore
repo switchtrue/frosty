@@ -24,3 +24,6 @@ _testmain.go
 *.prof
 
 *.frosty.config
+
+# compiled binaries
+bin
