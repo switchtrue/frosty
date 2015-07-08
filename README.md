@@ -1,6 +1,6 @@
 # Disclaimer!
 
-There is currently no code for this project! The readme file here is intended initially as a set of requirements for myself! However, pklease keep reading to discover its intent and watch this repository to see updates!
+There is currently not much in the way of code for this project! The readme file here is intended initially as a set of requirements for myself! However, please keep reading to discover its intent and watch this repository to see updates!
 
 # frosty
 A lightweight command line backup utility that stores back ups as archives in Amazon Glacier.
