@@ -24,9 +24,10 @@ This JSON file can contain the following properties (see below for an example fi
 - **errorReportRecipients**: A list of email addresses that will receive an email containing a report of the backup jobs if a failure has occurred. The error message(s) will be attached to the email. Whilst this property is optional, if it is not set backups will fail silently.
 - **envVars**: This optional property can contain key-value pairs of environment variable names and their values which will be set for all jobs.
 - **jobs** *(mandatory)*: This contains a list of named jobs that frosty will run. Each "job" should be a discreet task to run to backup another program. Each job will be timed and marked as a success or failure in the report.
-- **jobs.*.envVars**: This optional property can contain key-value pairs of environment variable names and their values which will be set for this job only.
-- **jobs.*.script** *(mandatory)*: The commands to execute to run this job. If you have a particularly complicated backup script it is recommended that you save this in a separate file and invoke that file from the `script` property (e.g `"script": ["./path/to/my/script.sh"]`).
-- **jobs.*.archives** *(mandatory)*: A list of file system [globs](https://en.wikipedia.org/wiki/Glob_(programming)). each matched file for this glob will be pushed to Amazon Glacier.
+- **jobs.name** *(mandatory)*: The name of this job. This will be included in any reporting and must be unique throughout the config file.
+- **jobs.envVars**: This optional property can contain key-value pairs of environment variable names and their values which will be set for this job only.
+- **jobs.script** *(mandatory)*: The commands to execute to run this job. If you have a particularly complicated backup script it is recommended that you save this in a separate file and invoke that file from the `script` property (e.g `"script": ["./path/to/my/script.sh"]`).
+- **jobs.*rchives** *(mandatory)*: A list of file system [globs](https://en.wikipedia.org/wiki/Glob_(programming)). each matched file for this glob will be pushed to Amazon Glacier.
 
 ### Environment Variables
 
@@ -56,8 +57,9 @@ Frosty sets environment variables when running jobs for use within scripts that 
     "hello": "mike",
   },
 
-  "jobs": {
-    "svn": {
+  "jobs": [
+    {
+      "name": "svn",
       "script": [
         "mkdir $FROSTY_WORKING_DIRECTORY/svn_backup",
         "svnadmin hotcopy /var/www/svn/SEWPaC_POC $FROSTY_WORKING_DIRECTORY/svn_backup --clean-logs",
@@ -65,7 +67,8 @@ Frosty sets environment variables when running jobs for use within scripts that 
       ],
       "archives": ["$FROSTY_WORKING_COPY/svn_backup.zip"]
     },
-    "postgres": {
+    {
+      "name": "postgres",
       "envVars": {
         "PGPASSWORD": "p@ssw0rd"
       },
@@ -74,7 +77,7 @@ Frosty sets environment variables when running jobs for use within scripts that 
       ],
       "archives": "$FROSTY_WORKING_DIRECTORY/postgres_backup.gz"
     },
-  }
+  ]
 }
 ```
 
