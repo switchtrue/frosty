@@ -6,6 +6,8 @@ import (
 
 	"os/exec"
 
+	"os"
+
 	"github.com/mleonard87/frosty/config"
 )
 
@@ -32,6 +34,12 @@ func (js JobStatus) IsSuccessful() bool {
 }
 
 func Start(jobConfig config.JobConfig) JobStatus {
+
+	jobDir, artefactDir := MakeJobDirectories(jobConfig.Name)
+
+	os.Setenv("FROSTY_JOB_DIR", jobDir)
+	os.Setenv("FROSTY_JOB_ARTIFACTS_DIR", artefactDir)
+
 	jc := JobStatus{}
 
 	jc.JobConfig = jobConfig
