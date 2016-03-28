@@ -16,6 +16,11 @@ type EmailSummaryTemplateData struct {
 	ElapsedTime time.Duration
 	Hostname    string
 	Jobs        []job.JobStatus
+	Status      int
+}
+
+func (estd EmailSummaryTemplateData) IsSuccessful() bool {
+	return estd.Status == job.STATUS_SUCCESS
 }
 
 func SendEmailSummary(jobStatuses []job.JobStatus, emailConfig *config.EmailReportingConfig) {
@@ -42,6 +47,7 @@ func getEmailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTempla
 	}
 
 	var startTime, endTime time.Time
+	status := job.STATUS_SUCCESS
 
 	for _, j := range jobStatuses {
 		if startTime.IsZero() || j.StartTime.Before(startTime) {
@@ -51,6 +57,10 @@ func getEmailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTempla
 		if endTime.IsZero() || j.EndTime.After(endTime) {
 			endTime = j.EndTime
 		}
+
+		if j.Status == job.STATUS_FAILURE {
+			status = job.STATUS_FAILURE
+		}
 	}
 
 	return EmailSummaryTemplateData{
@@ -59,5 +69,6 @@ func getEmailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTempla
 		endTime.Sub(startTime),
 		hostname,
 		jobStatuses,
+		status,
 	}
 }

@@ -3,6 +3,11 @@
     <body style="font-size: 0.8em; font-family: Arial, sans-serif;">
         <h1>
             Frosty Backup Report:
+            {{ if .IsSuccessful }}
+            <span style="color: green;">Success</span>
+            {{ else }}
+            <span style="color: red;">Failure</span>
+            {{ end }}
         </h1>
         <table>
             <tbody>
