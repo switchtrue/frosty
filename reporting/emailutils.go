@@ -3,6 +3,7 @@ package reporting
 import (
 	"log"
 	"net/smtp"
+	"strings"
 	"text/template"
 )
 
@@ -30,6 +31,14 @@ func (m *Mail) GetSMTPHostAndPort() string {
 	return m.Host + ":" + m.Port
 }
 
+func (m *Mail) GetRecipientHeader() string {
+	var recipients string
+	for _, recipient := range m.Recipients {
+		recipients += recipient + ","
+	}
+	return strings.TrimRight(recipients, ",")
+}
+
 func (m *Mail) SendFromTemplate(tmpl *template.Template, templateData EmailSummaryTemplateData) {
 	// Connect to the remote SMTP server.
 	c, err := smtp.Dial(m.GetSMTPHostAndPort())
@@ -50,7 +59,7 @@ func (m *Mail) SendFromTemplate(tmpl *template.Template, templateData EmailSumma
 	defer wc.Close()
 
 	wc.Write([]byte("From: " + m.Sender + "\n"))
-	wc.Write([]byte("To: " + m.Recipients[0] + "\n"))
+	wc.Write([]byte("To: " + m.GetRecipientHeader() + "\n"))
 	wc.Write([]byte("Subject: testing 1" + "\n"))
 	wc.Write([]byte("Content-Type: text/html; charset=utf-8" + "\n"))
 	wc.Write([]byte("\n"))
