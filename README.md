@@ -1,13 +1,16 @@
-# Disclaimer!
+# !!NOTE!!
 
-There is currently not much in the way of code for this project! The readme file here is intended initially as a set of requirements for myself! However, please keep reading to discover its intent and watch this repository to see updates!
+This currently is not finished!
 
-# frosty
+# Frosty Backup utility
+
 A lightweight command line backup utility that stores back ups as archives in Amazon Glacier.
 
 Frosty will run one or more user configurable jobs to execute a backup and then push the resulting  backup to Amazon Glacier taking advantage of its low storage costs. The idea is to keep a single configuration file detailing the various system backups that might be required, executing them all via single command and receiving a single email report on success/failure.
 
-A "job" is a series of command line tasks to execute resulting in one or more files that can be sent to Amazon Glacier. Frosty takes care of setting environment variables and tidying up after itself to help ensure that now backups are left taking up disk space on the server in which they were run.
+A "job" is a single command line command to execute resulting in one or more files that can be sent to Amazon Glacier. Frosty takes care of setting environment variables and tidying up after itself to help ensure that no backups are left taking up disk space.
+
+The command that is run should produce one or more artefacts that will be zipped and sent to Amazon Glacier.
 
 # Usage
 
@@ -19,63 +22,57 @@ The commands to execute to carry out a frosty backup are configured in a JSON fi
 
 This JSON file can contain the following properties (see below for an example file):
 
-- **frostyHome** *(mandatory)*: The working directory that frosty will use to create to deal with temporary files created during the backup process. This folder must exist and the frost utility must have read, write and execute permissions on it. As each job runs the value of this will also be set in the $FROSTY_HOME environment variable. It is recommended that any backup files created ask part of a job are placed within this directory (see the Environment Variables section below).
-- **reportRecipients**: A list of email addresses that will receive an email containing a report of the backup jobs everytime it is run.
-- **errorReportRecipients**: A list of email addresses that will receive an email containing a report of the backup jobs if a failure has occurred. The error message(s) will be attached to the email. Whilst this property is optional, if it is not set backups will fail silently.
-- **envVars**: This optional property can contain key-value pairs of environment variable names and their values which will be set for all jobs.
 - **jobs** *(mandatory)*: This contains a list of named jobs that frosty will run. Each "job" should be a discreet task to run to backup another program. Each job will be timed and marked as a success or failure in the report.
 - **jobs.name** *(mandatory)*: The name of this job. This will be included in any reporting and must be unique throughout the config file.
-- **jobs.envVars**: This optional property can contain key-value pairs of environment variable names and their values which will be set for this job only.
-- **jobs.script** *(mandatory)*: The commands to execute to run this job. If you have a particularly complicated backup script it is recommended that you save this in a separate file and invoke that file from the `script` property (e.g `"script": ["./path/to/my/script.sh"]`).
-- **jobs.*rchives** *(mandatory)*: A list of file system [globs](https://en.wikipedia.org/wiki/Glob_(programming)). each matched file for this glob will be pushed to Amazon Glacier.
+- **jobs.command** *(mandatory)*: The commands to execute to run this job. If you have a particularly complicated backup script it is recommended that you save this in a separate file and invoke that file from the `script` property (e.g `"script": ["./path/to/my/script.sh"]`).
+
+- **reporting**: This will contain information for optionally configuring how reports of each backup managed. For now, only email reports are supported.
+- **reporting.email**: This contains the configuration for email reports.
+- **reporting.email.smtp.host** *(mandatory)*: The host name of the SMTP server to use.
+- **reporting.email.smtp.port** *(mandatory)*: The port of the SMTP server to use.
+- **reporting.email.sender** *(mandatory)*: The email address of the sender or the email (e.g. frosty-noreply@email.com)
+- **reporting.email.recipients** *(mandatory)*: A JSON list of recipients of the email report.
+
+### Shell Scripts
+
+Frosty only accepts a single command with no arguments for each job. As such, it is recommended that you create shell scripts that Frosty will execute to run your backups.
+
+In order to have backups pushed up to Amazon Glacier you must put any files you want backed up into the jobs `artefacts` directory. The location of this is available within your scripts from the environment variable `FROSTY_JOB_ARTIFACTS_DIR`. Please see the [examples](examples) directory for examples of how this is done.
+
+**Note:** Make sure that your scripts have the correct permissions to run!
 
 ### Environment Variables
 
-Frosty sets environment variables when running jobs for use within scripts that may be called or in the `script` property of a frosty job. The following environment variables are set by default:
+Frosty sets environment variables when running jobs for use within scripts called in the `command` property of a frosty job. The following environment variables are set by default:
 
-- **FROSTY_HOME**: This is set to the value of the `frostyHome` property in the .frosty.config file. This is where frosty will carry out all of its backups and write its own temporary files. This will not contain a trailing slash even is one is specified in the `frostyHome` property.
-- **FROSTY_RUN_HOME**: This will be set to the path of a directory created within `FROSTY_HOME` that will be created for the specific run of frosty. The name of this directory will be the current date and time (e.g. `$FROSTY_HOME/20150721_1836`). This will not contain a trailing slash. This directory will be deleted once frosty has completed the backup regardless of success or failure.
-- **FROSTY_JOB_HOME**: This will be set to the path of a directory created within `FROSTY_RUN_HOME` that will be created for the specific job running. The name of this directory will be the name of the job (e.g. `$FROSTY_RUN_HOME/postgres`). This directory will be deleted once the entire backup has completed regardless of success or failure.
+- `FROSTY_JOB_DIR`: The absolute path to the working directory of the current job. This is of the form `~/.frosty/jobs/<job-name>`.
+- `FROSTY_JOB_ARTIFACTS_DIR`: The absolute path to the folder that should contain any files that you want copied to Amazon Glacier. This is of the form `~/.frosty/jobs/artefacts/<job-name>`.
 
 ### Example .frosty.config file
 
 ```json
 {
-  "frostyHome": "",
-
-  "reportRecipients": [
-    "techteam@mycompany.com",
-    "boss@mycompany.com"
-  ],
-
-  "errorReportRecipients": [
-    "admin@mycompany.com",
-    "techteam@mycompany.com"
-  ],
-
-  "envVars": {
-    "hello": "mike",
+  "reporting": {
+    "email": {
+      "smtp": {
+        "host": "smtp.domain.com",
+        "port": 25
+      },
+      "sender": "frosty-noreply@email.com",
+      "to": [
+        "foo@bar.com",
+        "joe.bloggs@email.com"
+      ]
+    }
   },
-
   "jobs": [
     {
-      "name": "svn",
-      "script": [
-        "mkdir $FROSTY_WORKING_DIRECTORY/svn_backup",
-        "svnadmin hotcopy /var/www/svn/SEWPaC_POC $FROSTY_WORKING_DIRECTORY/svn_backup --clean-logs",
-        "cd $FROSTY_WORKING_DIRECTORY && zip -r svn_backup.zip svn_backup"
-      ],
-      "archives": ["$FROSTY_WORKING_COPY/svn_backup.zip"]
+      "name": "backup-something",
+      "command": "scripts/backup_something.sh"
     },
     {
-      "name": "postgres",
-      "envVars": {
-        "PGPASSWORD": "p@ssw0rd"
-      },
-      "script": [
-        "pg_dump dbname -U username | gzip > $FROSTY_WORKING_DIRECTORY/postgres_backup.gz"
-      ],
-      "archives": "$FROSTY_WORKING_DIRECTORY/postgres_backup.gz"
+      "name": "backup-something-else",
+      "command": "scripts/backup_something_else.sh"
     },
   ]
 }
