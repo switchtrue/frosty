@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"sync"
@@ -51,12 +52,21 @@ func printVersion() {
 }
 
 func validate(configPath string) {
-	config.LoadConfig(configPath)
-	fmt.Println("Frosty config file: %v - OK", configPath)
+	_, err := config.LoadConfig(configPath)
+	if err != nil {
+		log.Fatalf("Frosty config file: %v - FAILED\n", configPath)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Frosty config file: %v - OK\n", configPath)
 }
 
 func backup(configPath string) {
-	frostyConfig := config.LoadConfig(configPath)
+	frostyConfig, err := config.LoadConfig(configPath)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
 
 	jobStatuses := beginJobs(frostyConfig.Jobs)
 

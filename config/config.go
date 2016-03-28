@@ -2,9 +2,11 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 type FrostyConfig struct {
@@ -30,7 +32,50 @@ type JobConfig struct {
 	Command string `json:"command"`
 }
 
-func LoadConfig(configPath string) FrostyConfig {
+func (fc *FrostyConfig) validateJobNames() bool {
+	ok := true
+	for _, j := range fc.Jobs {
+		jobNameCount := 0
+		for _, oj := range fc.Jobs {
+			if j.Name == oj.Name {
+				jobNameCount++
+			}
+		}
+		if jobNameCount > 1 {
+			ok = false
+			log.Printf("Job names must be unique - duplicate found for %q.\n", j.Name)
+		}
+	}
+	return ok
+}
+
+func (fc *FrostyConfig) validateJobs() bool {
+	ok := true
+	for i, j := range fc.Jobs {
+		if strings.TrimSpace(j.Name) == "" {
+			log.Printf("All jobs must have names and it must not be empty - job in position %d has no name.", i)
+			ok = false
+		}
+		if strings.TrimSpace(j.Command) == "" {
+			log.Printf("All jobs must have a command and it must not be empty - %q has no command.", j.Name)
+			ok = false
+		}
+	}
+	return ok
+}
+
+func (fc *FrostyConfig) validate() bool {
+	validationPassed := true
+	validationPassed = fc.validateJobNames()
+	validationPassed = fc.validateJobs()
+
+	// TODO: Validate that if the email section is supplied then all the details are provided.
+	// TODO: Validate that the email addresses in the email section are actually email addresses.
+
+	return validationPassed
+}
+
+func LoadConfig(configPath string) (FrostyConfig, error) {
 	f, ferr := ioutil.ReadFile(configPath)
 	if ferr != nil {
 		log.Fatal("Cannot find frosty config file: %v\n", ferr)
@@ -40,9 +85,13 @@ func LoadConfig(configPath string) FrostyConfig {
 	var frostyConfig FrostyConfig
 	jerr := json.Unmarshal(f, &frostyConfig)
 	if jerr != nil {
-		log.Fatal("Cannot parse frosty config file: %v: %v\n", configPath, ferr)
+		log.Fatal("Cannot parse frosty config file: %v: %v Are you sure the JSON is valid?\n", configPath, ferr)
 		os.Exit(1)
 	}
 
-	return frostyConfig
+	if !frostyConfig.validate() {
+		return frostyConfig, errors.New("Failed to validate config file: " + configPath)
+	}
+
+	return frostyConfig, nil
 }
