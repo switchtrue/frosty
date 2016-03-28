@@ -90,11 +90,11 @@ To run nightly backups it is recommended that you set up a [cron](https://en.wik
 
 ## Emails
 
-As detailed above in the "Configuration" section, frosty is able to send out glorious html email reports following each backup. As sample email report can be see here:
+As detailed above in the "Configuration" section, frosty is able to send out glorious html email reports following each backup. A sample email report can be see here:
 
 ![Frosty email report](https://i.imgur.com/GeW9Qek.png)
 
-If a job fails, its standard out is all added to the email so you can identify exactly what went wrong.
+If a job fails, it's standard out is added to the email so you can identify exactly what went wrong.
 
 
 
