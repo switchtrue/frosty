@@ -27,7 +27,7 @@ _testmain.go
 
 # compiled binaries
 bin
-frosty.iml
+*.iml
 .name
 .idea
 scripts
