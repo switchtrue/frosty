@@ -8,6 +8,7 @@ import (
 
 	"github.com/mleonard87/frosty/config"
 	"github.com/mleonard87/frosty/job"
+	"github.com/mleonard87/frosty/tmpl"
 )
 
 type EmailSummaryTemplateData struct {
@@ -24,10 +25,18 @@ func (estd EmailSummaryTemplateData) IsSuccessful() bool {
 }
 
 func SendEmailSummary(jobStatuses []job.JobStatus, emailConfig *config.EmailReportingConfig) {
-
 	templateData := getEmailSummaryTemplateData(jobStatuses)
 
-	t, _ := template.ParseFiles("tmpl/email_summary.html")
+	data, err := tmpl.Asset("tmpl/email_summary.html")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	t := template.New("frosty-report")
+	t, err2 := t.Parse(string(data))
+	if err2 != nil {
+		fmt.Println(err2)
+	}
 
 	mail := Mail{}
 

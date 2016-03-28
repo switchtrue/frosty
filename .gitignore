@@ -31,3 +31,5 @@ bin
 .name
 .idea
 scripts
+bindata.go
+frosty

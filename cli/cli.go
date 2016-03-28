@@ -76,7 +76,6 @@ func backup(configPath string) {
 }
 
 func beginJobs(jobs []config.JobConfig) []job.JobStatus {
-
 	ch := make(chan job.JobStatus)
 	var wg sync.WaitGroup
 
