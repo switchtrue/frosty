@@ -1,4 +1,4 @@
-generate-bin-debug:
+generate-bindata-debug:
 	go-bindata -debug -o tmpl/bindata.go -pkg tmpl tmpl
 
 build:
