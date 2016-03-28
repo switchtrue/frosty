@@ -48,8 +48,8 @@ func (m *Mail) SendFromTemplate(tmpl *template.Template, templateData EmailSumma
 	defer c.Close()
 
 	// Set the sender and recipient.
-	c.Mail("sender@example.org")
-	c.Rcpt("recipient@example.net")
+	c.Mail(m.Sender)
+	c.Rcpt(m.Recipients[0])
 
 	// Send the email body.
 	wc, err := c.Data()
