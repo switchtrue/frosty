@@ -2,7 +2,7 @@
 
 This currently is not finished!
 
-# Frosty Backup utility
+# Frosty Backup Utility
 
 A lightweight command line backup utility that stores back ups as archives in Amazon Glacier.
 
@@ -24,8 +24,7 @@ This JSON file can contain the following properties (see below for an example fi
 
 - **jobs** *(mandatory)*: This contains a list of named jobs that frosty will run. Each "job" should be a discreet task to run to backup another program. Each job will be timed and marked as a success or failure in the report.
 - **jobs.name** *(mandatory)*: The name of this job. This will be included in any reporting and must be unique throughout the config file.
-- **jobs.command** *(mandatory)*: The commands to execute to run this job. If you have a particularly complicated backup script it is recommended that you save this in a separate file and invoke that file from the `script` property (e.g `"script": ["./path/to/my/script.sh"]`).
-
+- **jobs.command** *(mandatory)*: The commands to execute to run this job. This can only be a single command with no arguments - if you require a non-trivial backup script it is recommended that you save this in a separate file and invoke that file from the `command` property (e.g `"command": ["./path/to/my/script.sh"]`).
 - **reporting**: This will contain information for optionally configuring how reports of each backup managed. For now, only email reports are supported.
 - **reporting.email**: This contains the configuration for email reports.
 - **reporting.email.smtp.host** *(mandatory)*: The host name of the SMTP server to use.
@@ -80,6 +79,9 @@ Frosty sets environment variables when running jobs for use within scripts calle
 
 ## Starting a backup
 `frosty backup /path/to/my.frosty.config`
+
+## Validating your .frosty.config file
+`frosty validate /path/to/my.frosty.config`
 
 ## Running Nightly Backups
 To run nightly backups it is recommended that you set up a [cron](https://en.wikipedia.org/wiki/Cron) job to execute `frosty backup /path/to/my.frosty.config`.
