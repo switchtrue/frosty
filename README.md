@@ -44,8 +44,8 @@ In order to have backups pushed up to Amazon Glacier you must put any files you 
 
 Frosty sets environment variables when running jobs for use within scripts called in the `command` property of a frosty job. The following environment variables are set by default:
 
-- `FROSTY_JOB_DIR`: The absolute path to the working directory of the current job. This is of the form `~/.frosty/jobs/<job-name>`.
-- `FROSTY_JOB_ARTIFACTS_DIR`: The absolute path to the folder that should contain any files that you want copied to Amazon Glacier. This is of the form `~/.frosty/jobs/artefacts/<job-name>`.
+- **FROSTY_JOB_DIR**: The absolute path to the working directory of the current job. This is of the form `~/.frosty/jobs/<job-name>`.
+- **FROSTY_JOB_ARTIFACTS_DIR**: The absolute path to the folder that should contain any files that you want copied to Amazon Glacier. This is of the form `~/.frosty/jobs/artefacts/<job-name>`.
 
 ### Example .frosty.config file
 
@@ -85,3 +85,16 @@ Frosty sets environment variables when running jobs for use within scripts calle
 
 ## Running Nightly Backups
 To run nightly backups it is recommended that you set up a [cron](https://en.wikipedia.org/wiki/Cron) job to execute `frosty backup /path/to/my.frosty.config`.
+
+# Reporting
+
+## Emails
+
+As detailed above in the "Configuration" section, frosty is able to send out email reports following each backup. As sample email report can be see here:
+
+![Frosty email report](https://i.imgur.com/3BFC37T.png)
+
+If a job fails, its standard out is all added to the email so you can identify exactly what went wrong.
+
+
+
