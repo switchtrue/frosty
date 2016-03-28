@@ -2,14 +2,27 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 )
 
 type FrostyConfig struct {
-	WorkingDirectory string      `json:"workingDirectory"`
-	Jobs             []JobConfig `json:"jobs"`
+	ReportingConfig ReportingConfig `json:"reporting"`
+	Jobs            []JobConfig     `json:"jobs"`
+}
+
+type ReportingConfig struct {
+	Email EmailReportingConfig `json:"email"`
+}
+
+type EmailReportingConfig struct {
+	SMTP struct {
+		Host string `json:"host"`
+		Port string `json:"port"`
+	} `json:"smtp"`
+	Sender     string   `json:"sender"`
+	Recipients []string `json:"recipients"`
 }
 
 type JobConfig struct {
@@ -20,14 +33,14 @@ type JobConfig struct {
 func LoadConfig(configPath string) FrostyConfig {
 	f, ferr := ioutil.ReadFile(configPath)
 	if ferr != nil {
-		fmt.Printf("Cannot find frosty config file: %v\n", ferr)
+		log.Fatal("Cannot find frosty config file: %v\n", ferr)
 		os.Exit(1)
 	}
 
 	var frostyConfig FrostyConfig
 	jerr := json.Unmarshal(f, &frostyConfig)
 	if jerr != nil {
-		fmt.Printf("Cannot parse frosty config file: %v: %v\n", configPath, ferr)
+		log.Fatal("Cannot parse frosty config file: %v: %v\n", configPath, ferr)
 		os.Exit(1)
 	}
 

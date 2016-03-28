@@ -1,6 +1,7 @@
 package job
 
 import (
+	"strings"
 	"time"
 
 	"os/exec"
@@ -22,8 +23,12 @@ type JobStatus struct {
 	JobConfig config.JobConfig
 }
 
-func (js *JobStatus) ElapsedTime() time.Duration {
+func (js JobStatus) ElapsedTime() time.Duration {
 	return js.EndTime.Sub(js.StartTime)
+}
+
+func (js JobStatus) IsSuccessful() bool {
+	return js.Status == STATUS_SUCCESS
 }
 
 func Start(jobConfig config.JobConfig) JobStatus {
@@ -36,11 +41,11 @@ func Start(jobConfig config.JobConfig) JobStatus {
 	out, err := exec.Command(jobConfig.Command).Output()
 	if err != nil {
 		jc.Status = STATUS_FAILURE
-		jc.Error = err.Error()
+		jc.Error = strings.TrimSpace(err.Error())
 	}
 
 	jc.EndTime = time.Now()
-	jc.Output = string(out[:])
+	jc.Output = strings.TrimSpace(string(out[:]))
 
 	return jc
 }

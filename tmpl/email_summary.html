@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <body style="font-size: 0.8em; font-family: Arial, sans-serif;">
+        <h1>
+            Frosty Backup Report:
+        </h1>
+        <table>
+            <tbody>
+            <tr>
+                <td style="font-weight: bold; padding: 0 5px;">Backup Start:</td>
+                <td>{{ .StartTime.Format "02-Jan-2006 15:04:05" }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; padding: 0 5px;">Backup End:</td>
+                <td>{{ .EndTime.Format "02-Jan-2006 15:04:05" }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; padding: 0 5px;">Backup Duration:</td>
+                <td>{{ .ElapsedTime }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; padding: 0 5px;">Hostname:</td>
+                <td>{{ .Hostname }}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <br/>
+        <br/>
+
+        <table style="font-size: 0.9em; text-align: left; border-collapse: collapse; margin-left: 5px;">
+            <thead>
+            <tr>
+                <th style="min-width: 130px;">Job</th>
+                <th style="width: 100px;">Status</th>
+                <th style="width: 100px;">Start Time</th>
+                <th style="width: 100px;">End Time</th>
+                <th>Duration</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ range $key, $value := .Jobs }}
+            <tr style="height: 20px; border-top: 1px solid lightgrey;">
+                <td style="font-weight: bold;">{{ $value.JobConfig.Name }}</td>
+                <td style="font-weight: bold;">
+                    {{ if $value.IsSuccessful }}
+                    <span style="color: green;">Success</span>
+                    {{ else }}
+                    <span style="color: red;">Failure</span>
+                    {{ end }}
+                </td>
+                <td>{{ $value.StartTime.Format "15:04:05" }}</td>
+                <td>{{ $value.EndTime.Format "15:04:05" }}</td>
+                <td>{{ $value.ElapsedTime }}</td>
+            </tr>
+            {{ if $value.Error }}
+            <tr>
+                <td colspan="5">
+                    <span style="font-weight: bold; font-style: italic; margin-left: 30px; color: grey;">output:</span>
+                    <div style="max-height: 170px; overflow-y: auto;">
+                        <pre style="background-color: #454545; color: white; padding: 3px; white-space: pre-line; margin: 4px 0 4px 30px; font-size: 1.1em;">{{ if $value.Output }}{{ $value.Output }}{{ end }}
+                            <span style="color: red;">{{ $value.Error }}</span>
+                        </pre>
+                    </div>
+                </td>
+            </tr>
+            {{ end }}
+            {{ end }}
+            </tbody>
+        </table>
+    </body>
+</html>

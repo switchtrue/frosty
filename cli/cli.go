@@ -8,6 +8,7 @@ import (
 
 	"github.com/mleonard87/frosty/config"
 	"github.com/mleonard87/frosty/job"
+	"github.com/mleonard87/frosty/reporting"
 )
 
 var frostyVersion string
@@ -57,10 +58,14 @@ func validate(configPath string) {
 func backup(configPath string) {
 	frostyConfig := config.LoadConfig(configPath)
 
-	beginJobs(frostyConfig.Jobs)
+	jobStatuses := beginJobs(frostyConfig.Jobs)
+
+	if &frostyConfig.ReportingConfig.Email != nil {
+		reporting.SendEmailSummary(jobStatuses, &frostyConfig.ReportingConfig.Email)
+	}
 }
 
-func beginJobs(jobs []config.JobConfig) {
+func beginJobs(jobs []config.JobConfig) []job.JobStatus {
 
 	ch := make(chan job.JobStatus)
 	var wg sync.WaitGroup
@@ -75,10 +80,13 @@ func beginJobs(jobs []config.JobConfig) {
 		close(ch)
 	}()
 
+	var jobStatuses []job.JobStatus
+
 	for js := range ch {
-		fmt.Println("Completed " + js.JobConfig.Name)
+		jobStatuses = append(jobStatuses, js)
 	}
 
+	return jobStatuses
 }
 
 func beginJob(jobConfig config.JobConfig, ch chan job.JobStatus, wg *sync.WaitGroup) {
