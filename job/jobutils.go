@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	FROSTY_DIR_NAME        = "frosty"
-	JOBS_DIR_NAME          = "jobs"
-	JOB_ARTIFACTS_DIR_NAME = "artifacts"
+	FROSTY_DIR_NAME                  = "frosty"
+	JOBS_DIR_NAME                    = "jobs"
+	JOB_ARTIFACTS_DIR_NAME           = "artifacts"
+	ARTIFACT_ARCHIVE_FILENAME_SUFFIX = "_archive.zip"
 )
 
 func getUserHomeDirectory() string {
@@ -35,7 +36,7 @@ func getJobArtefactDirectoryPath(jobName string) string {
 
 func MakeJobDirectories(jobName string) (string, string) {
 	jobDir := getJobDirectoryPath(jobName)
-	artefactDir := getJobArtefactDirectoryPath(jobName)
+	artifactDir := getJobArtefactDirectoryPath(jobName)
 
 	err := os.MkdirAll(jobDir, 0755)
 	if err != nil {
@@ -43,11 +44,21 @@ func MakeJobDirectories(jobName string) (string, string) {
 		os.Exit(1)
 	}
 
-	err2 := os.MkdirAll(artefactDir, 0755)
+	err2 := os.MkdirAll(artifactDir, 0755)
 	if err2 != nil {
 		log.Fatal(err2)
 		os.Exit(1)
 	}
 
-	return jobDir, artefactDir
+	return jobDir, artifactDir
+}
+
+func RemoveJobDirectory(jobName string) {
+	jobDir := getJobDirectoryPath(jobName)
+	os.RemoveAll(jobDir)
+}
+
+func GetArtifactArchiveTargetName(jobName string) string {
+	artifactDir := getJobArtefactDirectoryPath(jobName)
+	return filepath.Join(artifactDir, jobName+ARTIFACT_ARCHIVE_FILENAME_SUFFIX)
 }

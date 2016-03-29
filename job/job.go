@@ -1,6 +1,8 @@
 package job
 
 import (
+	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -8,21 +10,29 @@ import (
 
 	"os"
 
+	"github.com/mleonard87/frosty/artifact"
 	"github.com/mleonard87/frosty/config"
 )
 
 const (
 	STATUS_SUCCESS = iota
 	STATUS_FAILURE = iota
+	BYTES_PER_SI   = 1000
 )
 
+var BINARY_SI_UNITS = [...]string{"b", "kb", "mb", "gb", "tb", "pb", "eb", "zb"}
+
 type JobStatus struct {
-	Status    int
-	Output    string
-	Error     string
-	StartTime time.Time
-	EndTime   time.Time
-	JobConfig config.JobConfig
+	Status            int
+	Output            string
+	Error             string
+	StartTime         time.Time
+	EndTime           time.Time
+	JobConfig         config.JobConfig
+	ArchiveCreated    bool
+	ArchiveSize       int64
+	TransferStartTime time.Time
+	TransferEndTime   time.Time
 }
 
 func (js JobStatus) ElapsedTime() time.Duration {
@@ -33,27 +43,50 @@ func (js JobStatus) IsSuccessful() bool {
 	return js.Status == STATUS_SUCCESS
 }
 
-func Start(jobConfig config.JobConfig) JobStatus {
+func (js JobStatus) GetArchiveSizeDisplay() string {
+	size := js.ArchiveSize
+	for _, unit := range BINARY_SI_UNITS {
+		if size < 1024 {
+			return strconv.FormatInt(size, 10) + unit
+		} else {
+			size = size / BYTES_PER_SI
+		}
+	}
+	return strconv.FormatInt(js.ArchiveSize, 10) + BINARY_SI_UNITS[0]
+}
 
-	jobDir, artefactDir := MakeJobDirectories(jobConfig.Name)
+func Start(jobConfig config.JobConfig) JobStatus {
+	RemoveJobDirectory(jobConfig.Name)
+	jobDir, artifactDir := MakeJobDirectories(jobConfig.Name)
 
 	os.Setenv("FROSTY_JOB_DIR", jobDir)
-	os.Setenv("FROSTY_JOB_ARTIFACTS_DIR", artefactDir)
+	os.Setenv("FROSTY_JOB_ARTIFACTS_DIR", artifactDir)
 
-	jc := JobStatus{}
+	js := JobStatus{}
 
-	jc.JobConfig = jobConfig
-	jc.Status = STATUS_SUCCESS
-	jc.StartTime = time.Now()
+	js.JobConfig = jobConfig
+	js.Status = STATUS_SUCCESS
+	js.StartTime = time.Now()
 
 	out, err := exec.Command(jobConfig.Command).Output()
 	if err != nil {
-		jc.Status = STATUS_FAILURE
-		jc.Error = strings.TrimSpace(err.Error())
+		js.Status = STATUS_FAILURE
+		js.Error = strings.TrimSpace(err.Error())
 	}
 
-	jc.EndTime = time.Now()
-	jc.Output = strings.TrimSpace(string(out[:]))
+	js.EndTime = time.Now()
+	js.Output = strings.TrimSpace(string(out[:]))
 
-	return jc
+	archiveTarget := GetArtifactArchiveTargetName(jobConfig.Name)
+	js.ArchiveCreated = artifact.MakeArtifactArchive(artifactDir, archiveTarget)
+
+	if js.ArchiveCreated {
+		fileInfo, err := os.Stat(archiveTarget)
+		if err != nil {
+			log.Fatal(err)
+		}
+		js.ArchiveSize = fileInfo.Size()
+	}
+
+	return js
 }
