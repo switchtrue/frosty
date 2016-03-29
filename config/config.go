@@ -9,8 +9,13 @@ import (
 	"strings"
 )
 
+const (
+	BACKUP_SERVICE_AMAZON_GLACIER = iota
+)
+
 type FrostyConfig struct {
 	ReportingConfig ReportingConfig `json:"reporting"`
+	BackupConfig    BackupConfig    `json:"backup"`
 	Jobs            []JobConfig     `json:"jobs"`
 }
 
@@ -30,6 +35,18 @@ type EmailReportingConfig struct {
 type JobConfig struct {
 	Name    string `json:"name"`
 	Command string `json:"command"`
+}
+
+type BackupConfig struct {
+	BackupService             int
+	AmazonGlacierBackupConfig AmazonGlacierBackupConfig `json:"glacier"`
+}
+
+type AmazonGlacierBackupConfig struct {
+	AccessKeyId     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+	AccountId       string `json:"accountId"`
 }
 
 func (fc *FrostyConfig) validateJobNames() bool {
@@ -88,6 +105,8 @@ func LoadConfig(configPath string) (FrostyConfig, error) {
 		log.Fatal("Cannot parse frosty config file: %v: %v Are you sure the JSON is valid?\n", configPath, ferr)
 		os.Exit(1)
 	}
+	// Hard coded for now as Amazon Glacier is the only service I have anticipated supporting
+	frostyConfig.BackupConfig.BackupService = BACKUP_SERVICE_AMAZON_GLACIER
 
 	if !frostyConfig.validate() {
 		return frostyConfig, errors.New("Failed to validate config file: " + configPath)

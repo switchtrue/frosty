@@ -2,10 +2,12 @@ package reporting
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"text/template"
 	"time"
 
+	"github.com/mleonard87/frosty/backup"
 	"github.com/mleonard87/frosty/config"
 	"github.com/mleonard87/frosty/job"
 	"github.com/mleonard87/frosty/tmpl"
@@ -16,6 +18,7 @@ type EmailSummaryTemplateData struct {
 	EndTime     time.Time
 	ElapsedTime time.Duration
 	Hostname    string
+	VaultName   string
 	Jobs        []job.JobStatus
 	Status      int
 }
@@ -52,7 +55,7 @@ func SendEmailSummary(jobStatuses []job.JobStatus, emailConfig *config.EmailRepo
 func getEmailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTemplateData {
 	hostname, err := os.Hostname()
 	if err != nil {
-		fmt.Println("Could not determine hostname.")
+		log.Fatal("Could not determine hostname.", err)
 	}
 
 	var startTime, endTime time.Time
@@ -72,11 +75,14 @@ func getEmailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTempla
 		}
 	}
 
+	vaultName := backupservice.GetBackupName()
+
 	return EmailSummaryTemplateData{
 		startTime,
 		endTime,
 		endTime.Sub(startTime),
 		hostname,
+		vaultName,
 		jobStatuses,
 		status,
 	}

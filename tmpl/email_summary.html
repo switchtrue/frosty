@@ -2,7 +2,7 @@
 <html>
     <body style="font-size: 0.8em; font-family: Arial, sans-serif;">
         <h1>
-            Frosty Backup Report:
+            &#9731; Frosty Backup Report:
             {{ if .IsSuccessful }}
             <span style="color: green;">Success</span>
             {{ else }}
@@ -24,6 +24,10 @@
                 <td>{{ .ElapsedTime }}</td>
             </tr>
             <tr>
+                <td style="font-weight: bold; padding: 0 5px;">Glacier Vault Name:</td>
+                <td>{{ .VaultName }}</td>
+            </tr>
+            <tr>
                 <td style="font-weight: bold; padding: 0 5px;">Hostname:</td>
                 <td>{{ .Hostname }}</td>
             </tr>
@@ -38,15 +42,14 @@
             <tr style="height: 30px;">
                 <th style="min-width: 130px;">Job</th>
                 <th style="width: 100px;">Status</th>
-                <th style="width: 100px;">Archive Size*</th>
-                <th>Glacier Vault</th>
+                <th style="width: 150px;">Archive*</th>
                 <th style="width: 130px;">
                     Command Start Time
                     <br/>
                     <span style="font-style: italic; font-size: 0.9em; color: #999;">(Duration)</span>
                 </th>
                 <th style="width: 130px;">
-                    Transfer Start Time
+                    Transfer Start Time*
                     <br/>
                     <span style="font-style: italic; font-size: 0.9em; color: #999;">(Duration)</span>
                 </th>
@@ -63,24 +66,27 @@
                     <span style="color: red;">Failure</span>
                     {{ end }}
                 </td>
-
                 <td>
                     {{ if $value.ArchiveCreated }}
-                    {{ $value.GetArchiveSizeDisplay }}
+                    {{ $value.GetArchiveNameDisplay }}
+                    <span style="font-style: italic; font-size: 0.9em; color: #999;">({{ $value.GetArchiveSizeDisplay }})</span>
                     {{ else }}
                     -
                     {{ end }}
                 </td>
-                <td>{{ $value.StartTime.Format "20060102" }}_{{ $value.JobConfig.Name }}</td>
                 <td>
                     {{ $value.StartTime.Format "15:04:05" }}
                     <br/>
                     <span style="font-style: italic; font-size: 0.9em; color: #999;">({{ $value.ElapsedTime }})</span>
                 </td>
                 <td>
-                    {{ $value.StartTime.Format "15:04:05" }}
+                    {{ if $value.ArchiveCreated }}
+                    {{ $value.TransferStartTime.Format "15:04:05" }}
                     <br/>
-                    <span style="font-style: italic; font-size: 0.9em; color: #999;">({{ $value.ElapsedTime }})</span>
+                    <span style="font-style: italic; font-size: 0.9em; color: #999;">({{ $value.ElapsedTransferTime }})</span>
+                    {{ else }}
+                    -
+                    {{ end }}
                 </td>
             </tr>
             {{ if $value.Error }}

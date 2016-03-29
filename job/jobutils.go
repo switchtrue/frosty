@@ -58,7 +58,11 @@ func RemoveJobDirectory(jobName string) {
 	os.RemoveAll(jobDir)
 }
 
+func GetArtifactArchiveFileName(jobName string) string {
+	return jobName + ARTIFACT_ARCHIVE_FILENAME_SUFFIX
+}
+
 func GetArtifactArchiveTargetName(jobName string) string {
 	artifactDir := getJobArtefactDirectoryPath(jobName)
-	return filepath.Join(artifactDir, jobName+ARTIFACT_ARCHIVE_FILENAME_SUFFIX)
+	return filepath.Join(artifactDir, GetArtifactArchiveFileName(jobName))
 }

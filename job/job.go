@@ -39,8 +39,16 @@ func (js JobStatus) ElapsedTime() time.Duration {
 	return js.EndTime.Sub(js.StartTime)
 }
 
+func (js JobStatus) ElapsedTransferTime() time.Duration {
+	return js.TransferEndTime.Sub(js.TransferStartTime)
+}
+
 func (js JobStatus) IsSuccessful() bool {
 	return js.Status == STATUS_SUCCESS
+}
+
+func (js JobStatus) GetArchiveNameDisplay() string {
+	return GetArtifactArchiveFileName(js.JobConfig.Name)
 }
 
 func (js JobStatus) GetArchiveSizeDisplay() string {

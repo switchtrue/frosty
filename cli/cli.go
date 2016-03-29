@@ -7,6 +7,9 @@ import (
 
 	"sync"
 
+	"time"
+
+	"github.com/mleonard87/frosty/backup"
 	"github.com/mleonard87/frosty/config"
 	"github.com/mleonard87/frosty/job"
 	"github.com/mleonard87/frosty/reporting"
@@ -70,6 +73,9 @@ func backup(configPath string) {
 
 	jobStatuses := beginJobs(frostyConfig.Jobs)
 
+	backupService := backupservice.NewBackupService(&frostyConfig.BackupConfig)
+	beginBackups(backupService, jobStatuses)
+
 	if &frostyConfig.ReportingConfig.Email != nil {
 		reporting.SendEmailSummary(jobStatuses, &frostyConfig.ReportingConfig.Email)
 	}
@@ -102,4 +108,26 @@ func beginJob(jobConfig config.JobConfig, ch chan job.JobStatus, wg *sync.WaitGr
 	defer wg.Done()
 	js := job.Start(jobConfig)
 	ch <- js
+}
+
+func beginBackups(backupService backupservice.BackupService, jobStatuses []job.JobStatus) {
+	backupService.Init()
+
+	for i, js := range jobStatuses {
+		archivePath := job.GetArtifactArchiveTargetName(js.JobConfig.Name)
+
+		// Only run the backup if the archive exists.
+		_, err := os.Stat(archivePath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				log.Fatal(err)
+			} else {
+				continue
+			}
+		}
+
+		jobStatuses[i].TransferStartTime = time.Now()
+		backupService.StoreFile(archivePath)
+		jobStatuses[i].TransferEndTime = time.Now()
+	}
 }
