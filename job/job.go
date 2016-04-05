@@ -20,7 +20,7 @@ const (
 	BYTES_PER_SI   = 1000
 )
 
-var BINARY_SI_UNITS = [...]string{"b", "kb", "mb", "gb", "tb", "pb", "eb", "zb"}
+var BINARY_SI_UNITS = [...]string{"B", " kB", " MB", " GB", " TB", " PB", " EB", " ZB"}
 
 type JobStatus struct {
 	Status            int
@@ -33,6 +33,7 @@ type JobStatus struct {
 	ArchiveSize       int64
 	TransferStartTime time.Time
 	TransferEndTime   time.Time
+	TransferError     string
 }
 
 func (js JobStatus) ElapsedTime() time.Duration {

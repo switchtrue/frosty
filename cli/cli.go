@@ -74,6 +74,7 @@ func backup(configPath string) {
 	jobStatuses := beginJobs(frostyConfig.Jobs)
 
 	backupService := backupservice.NewBackupService(&frostyConfig.BackupConfig)
+	initBackupService(backupService, jobStatuses)
 	beginBackups(backupService, jobStatuses)
 
 	if &frostyConfig.ReportingConfig.Email != nil {
@@ -110,9 +111,26 @@ func beginJob(jobConfig config.JobConfig, ch chan job.JobStatus, wg *sync.WaitGr
 	ch <- js
 }
 
-func beginBackups(backupService backupservice.BackupService, jobStatuses []job.JobStatus) {
-	backupService.Init()
+func initBackupService(backupService backupservice.BackupService, jobStatuses []job.JobStatus) error {
+	err := backupService.Init()
 
+	if err != nil {
+		for i := range jobStatuses {
+			// If we couldn't init the backup service then just log the same error caused by that against each job.
+			// this saves needing to create a generic section in the email reporting that covers over-arching
+			// backup service errors.
+			jobStatuses[i].Status = job.STATUS_FAILURE
+			jobStatuses[i].TransferError = err.Error()
+			continue
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func beginBackups(backupService backupservice.BackupService, jobStatuses []job.JobStatus) {
 	for i, js := range jobStatuses {
 		archivePath := job.GetArtifactArchiveTargetName(js.JobConfig.Name)
 
@@ -120,14 +138,21 @@ func beginBackups(backupService backupservice.BackupService, jobStatuses []job.J
 		_, err := os.Stat(archivePath)
 		if err != nil {
 			if !os.IsNotExist(err) {
-				log.Fatal(err)
+				jobStatuses[i].Status = job.STATUS_FAILURE
+				jobStatuses[i].TransferError = err.Error()
+				continue
 			} else {
 				continue
 			}
 		}
 
 		jobStatuses[i].TransferStartTime = time.Now()
-		backupService.StoreFile(archivePath)
+		err = backupService.StoreFile(archivePath)
+		if err != nil {
+			jobStatuses[i].Status = job.STATUS_FAILURE
+			jobStatuses[i].TransferError = err.Error()
+			continue
+		}
 		jobStatuses[i].TransferEndTime = time.Now()
 	}
 }

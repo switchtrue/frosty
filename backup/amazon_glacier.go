@@ -2,8 +2,6 @@ package backupservice
 
 import (
 	"bytes"
-	"fmt"
-	"log"
 	"os"
 
 	"io/ioutil"
@@ -14,7 +12,7 @@ import (
 	"github.com/mleonard87/frosty/config"
 )
 
-type AmazonGlacierStorageService struct {
+type AmazonGlacierBackupService struct {
 	AccessKeyId     string
 	SecretAccessKey string
 	Region          string
@@ -23,7 +21,7 @@ type AmazonGlacierStorageService struct {
 	GlacierService  *glacier.Glacier
 }
 
-func (agss *AmazonGlacierStorageService) SetConfig(backupConfig *config.BackupConfig) {
+func (agss *AmazonGlacierBackupService) SetConfig(backupConfig *config.BackupConfig) {
 	agss.AccessKeyId = backupConfig.AmazonGlacierBackupConfig.AccessKeyId
 	agss.SecretAccessKey = backupConfig.AmazonGlacierBackupConfig.SecretAccessKey
 	agss.Region = backupConfig.AmazonGlacierBackupConfig.Region
@@ -31,33 +29,22 @@ func (agss *AmazonGlacierStorageService) SetConfig(backupConfig *config.BackupCo
 	agss.VaultName = GetBackupName()
 }
 
-func (agss *AmazonGlacierStorageService) Init() {
+func (agss *AmazonGlacierBackupService) Init() error {
 	agss.setEnvvars()
 	agss.GlacierService = glacier.New(session.New(), &aws.Config{})
 
-	//params := &glacier.ListVaultsInput{
-	//	AccountId: aws.String(agss.AccountId),
-	//}
+	err := agss.createVault(agss.VaultName)
+	if err != nil {
+		return err
+	}
 
-	//resp, err := agss.GlacierService.ListVaults(params)
-
-	//if err != nil {
-	//	// Print the error, cast err to awserr.Error to get the Code and
-	//	// Message from an error.
-	//	fmt.Println(err)
-	//	return
-	//}
-
-	agss.createVault(agss.VaultName)
-
-	// Pretty-print the response data.
-	//fmt.Println(resp)
+	return nil
 }
 
-func (agss *AmazonGlacierStorageService) StoreFile(pathToFile string) {
+func (agss *AmazonGlacierBackupService) StoreFile(pathToFile string) error {
 	fileContents, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	params := &glacier.UploadArchiveInput{
@@ -65,39 +52,31 @@ func (agss *AmazonGlacierStorageService) StoreFile(pathToFile string) {
 		VaultName: aws.String(agss.VaultName),
 		Body:      bytes.NewReader(fileContents),
 	}
-	resp, err := agss.GlacierService.UploadArchive(params)
 
+	_, err = agss.GlacierService.UploadArchive(params)
 	if err != nil {
-		// Print the error, cast err to awserr.Error to get the Code and
-		// Message from an error.
-		fmt.Println(err.Error())
-		return
+		return err
 	}
 
-	// Pretty-print the response data.
-	fmt.Println(resp)
+	return nil
 }
 
-func (agss *AmazonGlacierStorageService) createVault(vaultName string) {
+func (agss *AmazonGlacierBackupService) createVault(vaultName string) error {
 	agss.setEnvvars()
 	params := &glacier.CreateVaultInput{
 		AccountId: aws.String(agss.AccountId),
 		VaultName: aws.String(agss.VaultName),
 	}
-	resp, err := agss.GlacierService.CreateVault(params)
 
+	_, err := agss.GlacierService.CreateVault(params)
 	if err != nil {
-		// Print the error, cast err to awserr.Error to get the Code and
-		// Message from an error.
-		fmt.Println(err)
-		return
+		return err
 	}
 
-	// Pretty-print the response data.
-	fmt.Println(resp)
+	return nil
 }
 
-func (agss *AmazonGlacierStorageService) setEnvvars() {
+func (agss *AmazonGlacierBackupService) setEnvvars() {
 	os.Setenv("AWS_ACCESS_KEY_ID", agss.AccessKeyId)
 	os.Setenv("AWS_SECRET_ACCESS_KEY", agss.SecretAccessKey)
 	os.Setenv("AWS_REGION", agss.Region)
