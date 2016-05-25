@@ -22,10 +22,10 @@ type AmazonGlacierBackupService struct {
 }
 
 func (agss *AmazonGlacierBackupService) SetConfig(backupConfig *config.BackupConfig) {
-	agss.AccessKeyId = backupConfig.AmazonGlacierBackupConfig.AccessKeyId
-	agss.SecretAccessKey = backupConfig.AmazonGlacierBackupConfig.SecretAccessKey
-	agss.Region = backupConfig.AmazonGlacierBackupConfig.Region
-	agss.AccountId = backupConfig.AmazonGlacierBackupConfig.AccountId
+	agss.AccessKeyId = backupConfig.BackupConfig["accessKeyId"].(string)
+	agss.SecretAccessKey = backupConfig.BackupConfig["secretAccessKey"].(string)
+	agss.Region = backupConfig.BackupConfig["region"].(string)
+	agss.AccountId = backupConfig.BackupConfig["accountId"].(string)
 	agss.VaultName = GetBackupName()
 }
 

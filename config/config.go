@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,13 +11,15 @@ import (
 )
 
 const (
-	BACKUP_SERVICE_AMAZON_GLACIER = iota
+	BACKUP_SERVICE_AMAZON_GLACIER = "glacier"
+	BACKUP_SERVICE_AMAZON_S3      = "s3"
 )
 
 type FrostyConfig struct {
-	ReportingConfig ReportingConfig `json:"reporting"`
-	BackupConfig    BackupConfig    `json:"backup"`
-	Jobs            []JobConfig     `json:"jobs"`
+	ReportingConfig ReportingConfig        `json:"reporting"`
+	RawBackupConfig map[string]interface{} `json:"backup"`
+	BackupConfig    BackupConfig
+	Jobs            []JobConfig `json:"jobs"`
 }
 
 type ReportingConfig struct {
@@ -38,15 +41,8 @@ type JobConfig struct {
 }
 
 type BackupConfig struct {
-	BackupService             int
-	AmazonGlacierBackupConfig AmazonGlacierBackupConfig `json:"glacier"`
-}
-
-type AmazonGlacierBackupConfig struct {
-	AccessKeyId     string `json:"accessKeyId"`
-	SecretAccessKey string `json:"secretAccessKey"`
-	Region          string `json:"region"`
-	AccountId       string `json:"accountId"`
+	BackupService string
+	BackupConfig  map[string]interface{}
 }
 
 func (fc *FrostyConfig) validateJobNames() bool {
@@ -105,8 +101,23 @@ func LoadConfig(configPath string) (FrostyConfig, error) {
 		log.Fatal("Cannot parse frosty config file: %v: %v Are you sure the JSON is valid?\n", configPath, ferr)
 		os.Exit(1)
 	}
-	// Hard coded for now as Amazon Glacier is the only service I have anticipated supporting
-	frostyConfig.BackupConfig.BackupService = BACKUP_SERVICE_AMAZON_GLACIER
+
+	fmt.Println(frostyConfig.RawBackupConfig)
+
+	var backupConfig BackupConfig
+	if config, ok := frostyConfig.RawBackupConfig[BACKUP_SERVICE_AMAZON_GLACIER]; ok {
+		backupConfig.BackupService = BACKUP_SERVICE_AMAZON_GLACIER
+		backupConfig.BackupConfig = config.(map[string]interface{})
+	}
+
+	if config, ok := frostyConfig.RawBackupConfig[BACKUP_SERVICE_AMAZON_S3]; ok {
+		backupConfig.BackupService = BACKUP_SERVICE_AMAZON_S3
+		backupConfig.BackupConfig = config.(map[string]interface{})
+	}
+
+	frostyConfig.BackupConfig = backupConfig
+
+	fmt.Println(frostyConfig.BackupConfig.BackupService)
 
 	if !frostyConfig.validate() {
 		return frostyConfig, errors.New("Failed to validate config file: " + configPath)

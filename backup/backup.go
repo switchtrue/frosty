@@ -20,11 +20,14 @@ type BackupService interface {
 
 func NewBackupService(backupConfig *config.BackupConfig) BackupService {
 	var backupService BackupService
+
 	switch backupConfig.BackupService {
 	case config.BACKUP_SERVICE_AMAZON_GLACIER:
 		backupService = &AmazonGlacierBackupService{}
+	case config.BACKUP_SERVICE_AMAZON_S3:
+		backupService = &AmazonS3BackupService{}
 	default:
-		log.Fatal("Only Amazon Glacier is supported as a backup service.")
+		log.Fatal("Only Amazon Glacier and Amazon S3 are supported as a backup services.")
 		return nil
 	}
 
