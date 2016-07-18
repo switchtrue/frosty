@@ -9,6 +9,8 @@ import (
 
 	"time"
 
+	flag "github.com/ogier/pflag"
+
 	"github.com/mleonard87/frosty/backup"
 	"github.com/mleonard87/frosty/config"
 	"github.com/mleonard87/frosty/job"
@@ -24,29 +26,29 @@ const (
 )
 
 func Execute() {
-	switch os.Args[1] {
-	case COMMAND_BACKUP:
-		backup(os.Args[2])
-	case COMMAND_HELP:
-		printHelp()
-	case COMMAND_VALIDATE:
-		validate(os.Args[2])
-	case COMMAND_VERSION:
+	flag.Usage = printHelp
+
+	doValidate := flag.Bool("validate", false, "Validates that the specified config file is valid.")
+	doVersion := flag.Bool("version", false, "Prints the version information about the Frosty backup utility.")
+
+	flag.Parse()
+
+	switch {
+	case *doValidate:
+		validate(os.Args[1])
+	case *doVersion:
 		printVersion()
+	default:
+		backup(os.Args[1])
 	}
 }
 
 func printHelp() {
-	fmt.Println("usage: frosty <command> [<path-to-frosty-config-file>]")
-
-	printVersion()
-
-	fmt.Println("")
-	fmt.Println("Available commands:")
-	fmt.Printf("  %s <path-to-frosty-config-file> - executes a backup for the specified config file\n", COMMAND_BACKUP)
-	fmt.Printf("  %s - prints this help information\n", COMMAND_HELP)
-	fmt.Printf("  %s <path-to-frosty-config-file> - validates that the specified config file\n", COMMAND_VALIDATE)
-	fmt.Printf("  %s - prints version information about the Frosty backup utility\n", COMMAND_VERSION)
+	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "\n\tfrosty <path-to-frosty-config-file> [flags...]\n\n")
+	fmt.Fprintf(os.Stderr, "Flags:\n")
+	flag.PrintDefaults()
+	fmt.Fprintf(os.Stderr, "\n%s\n", frostyVersion)
 }
 
 func printVersion() {
