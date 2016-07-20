@@ -10,6 +10,8 @@ import (
 
 	"os"
 
+	"fmt"
+
 	"github.com/mleonard87/frosty/artifact"
 	"github.com/mleonard87/frosty/config"
 )
@@ -68,8 +70,11 @@ func Start(jobConfig config.JobConfig) JobStatus {
 	RemoveJobDirectory(jobConfig.Name)
 	jobDir, artifactDir := MakeJobDirectories(jobConfig.Name)
 
-	os.Setenv("FROSTY_JOB_DIR", jobDir)
-	os.Setenv("FROSTY_JOB_ARTIFACTS_DIR", artifactDir)
+	env := os.Environ()
+	env = append(env, fmt.Sprintf("FROSTY_JOB_DIR=%s", jobDir))
+	env = append(env, fmt.Sprintf("FROSTY_JOB_ARTIFACTS_DIR=%s", artifactDir))
+	cmd := exec.Command(jobConfig.Command)
+	cmd.Env = env
 
 	js := JobStatus{}
 
@@ -77,7 +82,7 @@ func Start(jobConfig config.JobConfig) JobStatus {
 	js.Status = STATUS_SUCCESS
 	js.StartTime = time.Now()
 
-	out, err := exec.Command(jobConfig.Command).Output()
+	out, err := cmd.Output()
 	if err != nil {
 		js.Status = STATUS_FAILURE
 		js.Error = strings.TrimSpace(err.Error())
