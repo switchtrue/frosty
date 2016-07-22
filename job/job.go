@@ -85,7 +85,14 @@ func Start(jobConfig config.JobConfig) JobStatus {
 	out, err := cmd.Output()
 	if err != nil {
 		js.Status = STATUS_FAILURE
-		js.Error = strings.TrimSpace(err.Error())
+
+		if ee, ok := err.(*exec.ExitError); ok {
+			// Capture and trim any errors logged to stderr.
+			se := strings.TrimSpace(string(ee.Stderr))
+			// Report both the Go error message and that from stderr
+			em := fmt.Sprintf("%s\n%s", se, err.Error())
+			js.Error = em
+		}
 	}
 
 	js.EndTime = time.Now()
