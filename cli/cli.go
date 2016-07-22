@@ -14,6 +14,7 @@ import (
 	"github.com/mleonard87/frosty/backup"
 	"github.com/mleonard87/frosty/config"
 	"github.com/mleonard87/frosty/job"
+	"github.com/mleonard87/frosty/reporting"
 )
 
 var frostyVersion string
@@ -72,15 +73,15 @@ func backup(configPath string) {
 		os.Exit(1)
 	}
 
-	jobStatuses := beginJobs(frostyConfig.Jobs)
+	bs := backupservice.NewBackupService(&frostyConfig.BackupConfig)
 
-	backupService := backupservice.NewBackupService(&frostyConfig.BackupConfig)
-	initBackupService(backupService, jobStatuses)
-	//beginBackups(backupService, jobStatuses)
+	js := beginJobs(frostyConfig.Jobs)
+	initBackupService(bs, js)
+	beginBackups(bs, js)
 
-	//if &frostyConfig.ReportingConfig.Email != nil {
-	//	reporting.SendEmailSummary(jobStatuses, &frostyConfig.ReportingConfig.Email)
-	//}
+	if &frostyConfig.ReportingConfig.Email != nil {
+		reporting.SendEmailSummary(js, &frostyConfig.ReportingConfig.Email)
+	}
 }
 
 func beginJobs(jobs []config.JobConfig) []job.JobStatus {
