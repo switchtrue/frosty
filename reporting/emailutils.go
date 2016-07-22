@@ -39,26 +39,6 @@ func (m *Mail) useAuthentication() bool {
 }
 
 func (m *Mail) SendFromTemplate(tmpl *template.Template, templateData EmailSummaryTemplateData) {
-	//// Connect to the remote SMTP server.
-	//c, err := smtp.Dial(m.GetSMTPHostAndPort())
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer c.Close()
-	//
-	//// Set the sender and recipient.
-	//c.Mail(m.Sender)
-	//c.Rcpt(m.Recipients[0])
-	//
-	////c.Auth()
-	//
-	//// Send the email body.
-	//wc, err := c.Data()
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer wc.Close()
-	//
 	var subject string
 	if templateData.IsSuccessful() {
 		subject = "[SUCCESS] Frosty Backup Report"
@@ -84,17 +64,30 @@ func (m *Mail) SendFromTemplate(tmpl *template.Template, templateData EmailSumma
 	tmpl.Execute(&wc, templateData)
 
 	if m.useAuthentication() {
-		fmt.Println("Sending email with auth")
 		a := smtp.PlainAuth("", m.Username, m.Password, m.Host)
 		err := smtp.SendMail(m.getSMTPHostAndPort(), a, m.Sender, m.Recipients, wc.Bytes())
 		if err != nil {
-			log.Printf("Error sending email with auth: %s\n", err)
+			log.Fatalf("Error sending email with auth: %s\n", err)
 		}
 	} else {
-		fmt.Println("Sending email without auth")
-		err := smtp.SendMail(m.getSMTPHostAndPort(), nil, m.Sender, m.Recipients, wc.Bytes())
+		// Connect to the remote SMTP server.
+		c, err := smtp.Dial(m.getSMTPHostAndPort())
 		if err != nil {
-			log.Printf("Error sending email without auth: %s\n", err)
+			log.Fatal(err)
 		}
+		defer c.Close()
+
+		// Set the sender and recipient.
+		c.Mail(m.Sender)
+		c.Rcpt(m.Recipients[0])
+
+		// Send the email body.
+		cwc, err := c.Data()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer cwc.Close()
+
+		cwc.Write(wc.Bytes())
 	}
 }
