@@ -7,8 +7,11 @@ import (
 	"log"
 	"os"
 	"strings"
+)
 
-	"github.com/mleonard87/frosty/backup"
+const (
+	BACKUP_SERVICE_AMAZON_GLACIER = "glacier"
+	BACKUP_SERVICE_AMAZON_S3      = "s3"
 )
 
 var frostyConfig FrostyConfig
@@ -105,13 +108,13 @@ func LoadConfig(configPath string) (FrostyConfig, error) {
 	//fmt.Println(frostyConfig.RawBackupConfig)
 
 	var backupConfig BackupConfig
-	if config, ok := fc.RawBackupConfig[backupservice.BACKUP_SERVICE_AMAZON_GLACIER]; ok {
-		backupConfig.BackupService = backupservice.BACKUP_SERVICE_AMAZON_GLACIER
+	if config, ok := fc.RawBackupConfig[BACKUP_SERVICE_AMAZON_GLACIER]; ok {
+		backupConfig.BackupService = BACKUP_SERVICE_AMAZON_GLACIER
 		backupConfig.BackupConfig = config.(map[string]interface{})
 	}
 
-	if config, ok := fc.RawBackupConfig[backupservice.BACKUP_SERVICE_AMAZON_S3]; ok {
-		backupConfig.BackupService = backupservice.BACKUP_SERVICE_AMAZON_S3
+	if config, ok := fc.RawBackupConfig[BACKUP_SERVICE_AMAZON_S3]; ok {
+		backupConfig.BackupService = BACKUP_SERVICE_AMAZON_S3
 		backupConfig.BackupConfig = config.(map[string]interface{})
 	}
 

@@ -16,9 +16,7 @@ import (
 	"github.com/mleonard87/frosty/config"
 )
 
-const (
-	BACKUP_SERVICE_AMAZON_GLACIER = "glacier"
-)
+const ()
 
 type AmazonGlacierBackupService struct {
 	AccessKeyId     string
@@ -31,7 +29,7 @@ type AmazonGlacierBackupService struct {
 
 // Return the backup service type this must match the string as used as the JSON property in the frosty backup config.
 func (agss *AmazonGlacierBackupService) Name() string {
-	return BACKUP_SERVICE_AMAZON_GLACIER
+	return config.BACKUP_SERVICE_AMAZON_GLACIER
 }
 
 // Initialise any variable needed for backups.

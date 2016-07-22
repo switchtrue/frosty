@@ -18,8 +18,6 @@ import (
 )
 
 const (
-	BACKUP_SERVICE_AMAZON_S3 = "s3"
-
 	BUCKET_NAME                            string = "frosty.backups"
 	ERROR_CODE_INVALID_BUCKET_NAME         string = "InvalidBucketName"
 	ERROR_CODE_BUCKET_ALREADY_OWNED_BY_YOU string = "BucketAlreadyOwnedByYou"
@@ -36,7 +34,7 @@ type AmazonS3BackupService struct {
 
 // Return the backup service type this must match the string as used as the JSON property in the frosty backup config.
 func (agss *AmazonS3BackupService) Name() string {
-	return BACKUP_SERVICE_AMAZON_S3
+	return config.BACKUP_SERVICE_AMAZON_S3
 }
 
 // Initialise any variable needed for backups.
