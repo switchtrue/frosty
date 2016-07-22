@@ -3,17 +3,15 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/mleonard87/frosty/backup"
 )
 
-const (
-	BACKUP_SERVICE_AMAZON_GLACIER = "glacier"
-	BACKUP_SERVICE_AMAZON_S3      = "s3"
-)
+var frostyConfig FrostyConfig
 
 type FrostyConfig struct {
 	ReportingConfig ReportingConfig        `json:"reporting"`
@@ -28,8 +26,10 @@ type ReportingConfig struct {
 
 type EmailReportingConfig struct {
 	SMTP struct {
-		Host string `json:"host"`
-		Port string `json:"port"`
+		Host     string `json:"host"`
+		Port     string `json:"port"`
+		Username string `json:"username"`
+		Password string `json:"password"`
 	} `json:"smtp"`
 	Sender     string   `json:"sender"`
 	Recipients []string `json:"recipients"`
@@ -89,39 +89,46 @@ func (fc *FrostyConfig) validate() bool {
 }
 
 func LoadConfig(configPath string) (FrostyConfig, error) {
-	f, ferr := ioutil.ReadFile(configPath)
-	if ferr != nil {
-		log.Fatal("Cannot find frosty config file: %v\n", ferr)
+	f, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		log.Fatalf("Cannot find frosty config file: %s\n", err)
 		os.Exit(1)
 	}
 
-	var frostyConfig FrostyConfig
-	jerr := json.Unmarshal(f, &frostyConfig)
-	if jerr != nil {
-		log.Fatal("Cannot parse frosty config file: %v: %v Are you sure the JSON is valid?\n", configPath, ferr)
+	var fc FrostyConfig
+	err = json.Unmarshal(f, &fc)
+	if err != nil {
+		log.Fatalf("Cannot parse frosty config file: %v: %v Are you sure the JSON is valid?\n", configPath, err)
 		os.Exit(1)
 	}
 
-	fmt.Println(frostyConfig.RawBackupConfig)
+	//fmt.Println(frostyConfig.RawBackupConfig)
 
 	var backupConfig BackupConfig
-	if config, ok := frostyConfig.RawBackupConfig[BACKUP_SERVICE_AMAZON_GLACIER]; ok {
-		backupConfig.BackupService = BACKUP_SERVICE_AMAZON_GLACIER
+	if config, ok := fc.RawBackupConfig[backupservice.BACKUP_SERVICE_AMAZON_GLACIER]; ok {
+		backupConfig.BackupService = backupservice.BACKUP_SERVICE_AMAZON_GLACIER
 		backupConfig.BackupConfig = config.(map[string]interface{})
 	}
 
-	if config, ok := frostyConfig.RawBackupConfig[BACKUP_SERVICE_AMAZON_S3]; ok {
-		backupConfig.BackupService = BACKUP_SERVICE_AMAZON_S3
+	if config, ok := fc.RawBackupConfig[backupservice.BACKUP_SERVICE_AMAZON_S3]; ok {
+		backupConfig.BackupService = backupservice.BACKUP_SERVICE_AMAZON_S3
 		backupConfig.BackupConfig = config.(map[string]interface{})
 	}
 
-	frostyConfig.BackupConfig = backupConfig
+	fc.BackupConfig = backupConfig
 
-	fmt.Println(frostyConfig.BackupConfig.BackupService)
+	//fmt.Println(frostyConfig.BackupConfig.BackupService)
 
-	if !frostyConfig.validate() {
-		return frostyConfig, errors.New("Failed to validate config file: " + configPath)
+	if !fc.validate() {
+		return fc, errors.New("Failed to validate config file: " + configPath)
 	}
 
-	return frostyConfig, nil
+	frostyConfig = fc
+
+	return fc, nil
+}
+
+func GetFrostConfig() FrostyConfig {
+	fc := frostyConfig
+	return fc
 }

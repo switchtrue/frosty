@@ -2,50 +2,51 @@ package backupservice
 
 import (
 	"log"
-	"os"
-	"time"
 
 	"github.com/mleonard87/frosty/config"
 )
 
 const (
-	BACKUP_NAME_PREFIX = "frosty_"
+	BACKUP_NAME_PREFIX           = "frosty_"
+	ENVVAR_AWS_ACCESS_KEY_ID     = "AWS_ACCESS_KEY_ID"
+	ENVVAR_AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
+	ENVVAR_AWS_REGION            = "AWS_REGION"
 )
 
 type BackupService interface {
+	Name() string
 	SetConfig(backupConfig *config.BackupConfig)
 	Init() error
 	StoreFile(pathToFile string) error
+	ArtifactFilename(jobName string) string
+	BackupLocation() string
 }
 
+var currentBackupService BackupService
+
 func NewBackupService(backupConfig *config.BackupConfig) BackupService {
-	var backupService BackupService
+	var bs BackupService
 
 	switch backupConfig.BackupService {
-	case config.BACKUP_SERVICE_AMAZON_GLACIER:
-		backupService = &AmazonGlacierBackupService{}
-	case config.BACKUP_SERVICE_AMAZON_S3:
-		backupService = &AmazonS3BackupService{}
+	case BACKUP_SERVICE_AMAZON_GLACIER:
+		bs = &AmazonGlacierBackupService{}
+	case BACKUP_SERVICE_AMAZON_S3:
+		bs = &AmazonS3BackupService{}
 	default:
 		log.Fatal("Only Amazon Glacier and Amazon S3 are supported as a backup services.")
 		return nil
 	}
 
-	backupService.SetConfig(backupConfig)
+	bs.SetConfig(backupConfig)
 
-	return backupService
+	currentBackupService = bs
+
+	return bs
 }
 
-var vaultName string
-
-func GetBackupName() string {
-	if vaultName == "" {
-		hostname, err := os.Hostname()
-		if err != nil {
-			log.Fatal("Could not determine hostname.", err)
-		}
-		vaultName = BACKUP_NAME_PREFIX + time.Now().Format("20060102") + "_" + hostname
+func CurrentBackupService() *BackupService {
+	if currentBackupService == nil {
+		log.Fatal("You must create a backup service before calling CurrentbackupService().")
 	}
-
-	return vaultName
+	return &currentBackupService
 }

@@ -5,13 +5,17 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+
+	"fmt"
+
+	"github.com/mleonard87/frosty/backup"
 )
 
 const (
-	FROSTY_DIR_NAME                  = "frosty"
-	JOBS_DIR_NAME                    = "jobs"
-	JOB_ARTIFACTS_DIR_NAME           = "artifacts"
-	ARTIFACT_ARCHIVE_FILENAME_SUFFIX = "_archive.zip"
+	FROSTY_DIR_NAME                     = "frosty"
+	JOBS_DIR_NAME                       = "jobs"
+	JOB_ARTIFACTS_DIR_NAME              = "artifacts"
+	ARTIFACT_ARCHIVE_FILENAME_EXTENSION = "zip"
 )
 
 func getUserHomeDirectory() string {
@@ -59,7 +63,8 @@ func RemoveJobDirectory(jobName string) {
 }
 
 func GetArtifactArchiveFileName(jobName string) string {
-	return jobName + ARTIFACT_ARCHIVE_FILENAME_SUFFIX
+	bs := *backupservice.CurrentBackupService()
+	return fmt.Sprintf("%s.%s", bs.ArtifactFilename(jobName), ARTIFACT_ARCHIVE_FILENAME_EXTENSION)
 }
 
 func GetArtifactArchiveTargetName(jobName string) string {

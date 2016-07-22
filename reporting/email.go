@@ -14,13 +14,14 @@ import (
 )
 
 type EmailSummaryTemplateData struct {
-	StartTime   time.Time
-	EndTime     time.Time
-	ElapsedTime time.Duration
-	Hostname    string
-	VaultName   string
-	Jobs        []job.JobStatus
-	Status      int
+	BackupService  string
+	StartTime      time.Time
+	EndTime        time.Time
+	ElapsedTime    time.Duration
+	Hostname       string
+	BackupLocation string
+	Jobs           []job.JobStatus
+	Status         int
 }
 
 func (estd EmailSummaryTemplateData) IsSuccessful() bool {
@@ -28,7 +29,7 @@ func (estd EmailSummaryTemplateData) IsSuccessful() bool {
 }
 
 func SendEmailSummary(jobStatuses []job.JobStatus, emailConfig *config.EmailReportingConfig) {
-	templateData := getEmailSummaryTemplateData(jobStatuses)
+	templateData := emailSummaryTemplateData(jobStatuses)
 
 	data, err := tmpl.Asset("tmpl/email_summary.html")
 	if err != nil {
@@ -41,10 +42,14 @@ func SendEmailSummary(jobStatuses []job.JobStatus, emailConfig *config.EmailRepo
 		fmt.Println(err2)
 	}
 
-	mail := Mail{}
+	mail := Mail{
+		Host:     emailConfig.SMTP.Host,
+		Port:     emailConfig.SMTP.Port,
+		Username: emailConfig.SMTP.Username,
+		Password: emailConfig.SMTP.Password,
+		Sender:   emailConfig.Sender,
+	}
 
-	mail.SetSMTPConnectionDetails(emailConfig.SMTP.Host, emailConfig.SMTP.Port)
-	mail.SetSender(emailConfig.Sender)
 	for _, recipient := range emailConfig.Recipients {
 		mail.AddRecipient(recipient)
 	}
@@ -52,7 +57,7 @@ func SendEmailSummary(jobStatuses []job.JobStatus, emailConfig *config.EmailRepo
 	mail.SendFromTemplate(t, templateData)
 }
 
-func getEmailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTemplateData {
+func emailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTemplateData {
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Fatal("Could not determine hostname.", err)
@@ -75,15 +80,16 @@ func getEmailSummaryTemplateData(jobStatuses []job.JobStatus) EmailSummaryTempla
 		}
 	}
 
-	vaultName := backupservice.GetBackupName()
+	bs := *backupservice.CurrentBackupService()
 
 	return EmailSummaryTemplateData{
-		startTime,
-		endTime,
-		endTime.Sub(startTime),
-		hostname,
-		vaultName,
-		jobStatuses,
-		status,
+		BackupService:  bs.Name(),
+		StartTime:      startTime,
+		EndTime:        endTime,
+		ElapsedTime:    endTime.Sub(startTime),
+		Hostname:       hostname,
+		BackupLocation: bs.BackupLocation(),
+		Jobs:           jobStatuses,
+		Status:         status,
 	}
 }

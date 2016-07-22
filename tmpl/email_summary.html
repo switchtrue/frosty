@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-    <body style="font-size: 0.8em; font-family: Arial, sans-serif;">
+    <body style="font-size: 1em; font-family: Arial, sans-serif;">
         <h1>
             &#9731; Frosty Backup Report:
             {{ if .IsSuccessful }}
@@ -11,6 +11,10 @@
         </h1>
         <table>
             <tbody>
+            <tr>
+                <td style="font-weight: bold; padding: 0 5px;">Backup Service:</td>
+                <td>{{ .BackupService }}</td>
+            </tr>
             <tr>
                 <td style="font-weight: bold; padding: 0 5px;">Backup Start:</td>
                 <td>{{ .StartTime.Format "02-Jan-2006 15:04:05" }}</td>
@@ -24,8 +28,8 @@
                 <td>{{ .ElapsedTime }}</td>
             </tr>
             <tr>
-                <td style="font-weight: bold; padding: 0 5px;">Glacier Vault Name:</td>
-                <td>{{ .VaultName }}</td>
+                <td style="font-weight: bold; padding: 0 5px;">Backup Location:</td>
+                <td>{{ .BackupLocation }}</td>
             </tr>
             <tr>
                 <td style="font-weight: bold; padding: 0 5px;">Hostname:</td>
@@ -95,7 +99,7 @@
                     <span style="font-weight: bold; font-style: italic; margin-left: 30px; color: grey;">command output:</span>
                     <div style="max-height: 170px; overflow-y: auto;">
                         <pre style="background-color: #454545; color: white; padding: 3px; white-space: pre-line; margin: 4px 0 4px 30px; font-size: 1.1em;">{{ if $value.Output }}{{ $value.Output }}{{ end }}
-                            <span style="color: red;">{{ $value.Error }}</span>
+                            <span style="color: #ff6e00;">{{ $value.Error }}</span>
                         </pre>
                     </div>
                 </td>
@@ -115,7 +119,7 @@
             </tbody>
         </table>
         <div style="margin-left: 15px; margin-top: 30px; font-size: 0.8em; font-weight: bold; font-style: italic;">
-            * Dash indicates that no archive was created and nothing was transferred to Amazon Glacier.
+            * Dash indicates that no archive was created and nothing was transferred to {{ .BackupService }}.
         </div>
     </body>
 </html>
