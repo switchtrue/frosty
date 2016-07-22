@@ -149,5 +149,5 @@ func getObjectKey(fileName string) string {
 		return ""
 	}
 
-	return fmt.Sprintf("%s_%s_%s", hostname, time.Now().Format("20060102T15:04:05"), fileName)
+	return fmt.Sprintf("%s/%s/%s_%s", hostname, time.Now().Format("20060102"), time.Now().Format("15:04:05"), fileName)
 }
