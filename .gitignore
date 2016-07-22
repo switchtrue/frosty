@@ -33,3 +33,4 @@ bin
 scripts
 bindata.go
 frosty
+build
