@@ -3,43 +3,55 @@ package artifact
 import (
 	"archive/zip"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 )
 
-func MakeArtifactArchive(artifactDir string, target string) bool {
-	artifactFiles := listArtifactFiles(artifactDir, target)
+func MakeArtifactArchive(artifactDir string, target string) (bool, error) {
+	artifactFiles, err := listArtifactFiles(artifactDir, target)
+	if err != nil {
+		return false, err
+	}
 
 	if len(artifactFiles) == 0 {
-		return false
+		return false, nil
 	}
-	makeZipFromFiles(target, artifactFiles, artifactDir)
-	return true
+
+	err = makeZipFromFiles(target, artifactFiles, artifactDir)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
-func listArtifactFiles(artifactDir string, target string) []string {
+func listArtifactFiles(artifactDir string, target string) ([]string, error) {
 	var artifactFiles []string
 
 	err := filepath.Walk(artifactDir, func(path string, f os.FileInfo, err error) error {
-		if path != artifactDir && !isDirectory(path) && path != target {
+		id, err := isDirectory(path)
+		if err != nil {
+			return err
+		}
+		if path != artifactDir && !id && path != target {
 			artifactFiles = append(artifactFiles, path)
 		}
 		return nil
 	})
+
 	if err != nil {
-		log.Fatalf("filepath.Walk() returned %v\n", err)
+		return artifactFiles, err
 	}
 
-	return artifactFiles
+	return artifactFiles, nil
 }
 
-func isDirectory(path string) bool {
+func isDirectory(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
-		log.Fatal(err)
+		return false, err
 	}
-	return fileInfo.IsDir()
+	return fileInfo.IsDir(), nil
 }
 
 func makeZipFromFiles(target string, sourceFileList []string, basePath string) error {
@@ -56,22 +68,22 @@ func makeZipFromFiles(target string, sourceFileList []string, basePath string) e
 	for _, file := range sourceFileList {
 		relativeFileName, err := filepath.Rel(basePath, file)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		f, err := w.Create(relativeFileName)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		fileContents, err := ioutil.ReadFile(file)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		_, err = f.Write(fileContents)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 

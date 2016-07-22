@@ -38,28 +38,27 @@ func getJobArtefactDirectoryPath(jobName string) string {
 	return filepath.Join(userHome, FROSTY_DIR_NAME, JOBS_DIR_NAME, jobName, JOB_ARTIFACTS_DIR_NAME)
 }
 
-func MakeJobDirectories(jobName string) (string, string) {
+func MakeJobDirectories(jobName string) (string, string, error) {
 	jobDir := getJobDirectoryPath(jobName)
 	artifactDir := getJobArtefactDirectoryPath(jobName)
 
 	err := os.MkdirAll(jobDir, 0755)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		return "", "", err
 	}
 
 	err2 := os.MkdirAll(artifactDir, 0755)
 	if err2 != nil {
-		log.Fatal(err2)
-		os.Exit(1)
+		return "", "", err
 	}
 
-	return jobDir, artifactDir
+	return jobDir, artifactDir, nil
 }
 
-func RemoveJobDirectory(jobName string) {
+func RemoveJobDirectory(jobName string) error {
 	jobDir := getJobDirectoryPath(jobName)
-	os.RemoveAll(jobDir)
+	return os.RemoveAll(jobDir)
+
 }
 
 func GetArtifactArchiveFileName(jobName string) string {

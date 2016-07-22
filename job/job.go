@@ -1,7 +1,6 @@
 package job
 
 import (
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -26,7 +25,8 @@ var BINARY_SI_UNITS = [...]string{"B", " kB", " MB", " GB", " TB", " PB", " EB",
 
 type JobStatus struct {
 	Status            int
-	Output            string
+	StdOut            string
+	StdErr            string
 	Error             string
 	StartTime         time.Time
 	EndTime           time.Time
@@ -67,8 +67,26 @@ func (js JobStatus) GetArchiveSizeDisplay() string {
 }
 
 func Start(jobConfig config.JobConfig) JobStatus {
-	RemoveJobDirectory(jobConfig.Name)
-	jobDir, artifactDir := MakeJobDirectories(jobConfig.Name)
+	js := JobStatus{}
+	js.JobConfig = jobConfig
+	js.Status = STATUS_SUCCESS
+	js.StartTime = time.Now()
+
+	err := RemoveJobDirectory(jobConfig.Name)
+	if err != nil {
+		js.Status = STATUS_FAILURE
+		js.Error = err.Error()
+		js.EndTime = time.Now()
+		return js
+	}
+
+	jobDir, artifactDir, err := MakeJobDirectories(jobConfig.Name)
+	if err != nil {
+		js.Status = STATUS_FAILURE
+		js.Error = err.Error()
+		js.EndTime = time.Now()
+		return js
+	}
 
 	env := os.Environ()
 	env = append(env, fmt.Sprintf("FROSTY_JOB_DIR=%s", jobDir))
@@ -76,35 +94,44 @@ func Start(jobConfig config.JobConfig) JobStatus {
 	cmd := exec.Command(jobConfig.Command)
 	cmd.Env = env
 
-	js := JobStatus{}
-
-	js.JobConfig = jobConfig
-	js.Status = STATUS_SUCCESS
-	js.StartTime = time.Now()
-
 	out, err := cmd.Output()
 	if err != nil {
 		js.Status = STATUS_FAILURE
 
 		if ee, ok := err.(*exec.ExitError); ok {
 			// Capture and trim any errors logged to stderr.
-			se := strings.TrimSpace(string(ee.Stderr))
-			// Report both the Go error message and that from stderr
-			em := fmt.Sprintf("%s\n%s", se, err.Error())
-			js.Error = em
+			js.StdErr = strings.TrimSpace(string(ee.Stderr))
 		}
+
+		js.Error = err.Error()
+		js.EndTime = time.Now()
+		js.StdOut = strings.TrimSpace(string(out[:]))
+
+		fmt.Println("Error executing script.")
+		fmt.Println(err)
+
+		return js
 	}
 
 	js.EndTime = time.Now()
-	js.Output = strings.TrimSpace(string(out[:]))
+	js.StdOut = strings.TrimSpace(string(out[:]))
 
 	archiveTarget := GetArtifactArchiveTargetName(jobConfig.Name)
-	js.ArchiveCreated = artifact.MakeArtifactArchive(artifactDir, archiveTarget)
+	js.ArchiveCreated, err = artifact.MakeArtifactArchive(artifactDir, archiveTarget)
+	if err != nil {
+		js.Status = STATUS_FAILURE
+		js.Error = err.Error()
+
+		return js
+	}
 
 	if js.ArchiveCreated {
 		fileInfo, err := os.Stat(archiveTarget)
 		if err != nil {
-			log.Fatal(err)
+			js.Status = STATUS_FAILURE
+			js.Error = err.Error()
+
+			return js
 		}
 		js.ArchiveSize = fileInfo.Size()
 	}

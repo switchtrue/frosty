@@ -96,10 +96,20 @@
             {{ if $value.Error }}
             <tr>
                 <td colspan="7">
+                    <span style="font-weight: bold; font-style: italic; margin-left: 30px; color: grey;">error:</span>
+                    <div style="max-height: 170px; overflow-y: auto;">
+                        <pre style="padding: 3px; white-space: pre-line; margin: 4px 0 4px 30px; font-size: 1.1em;">{{ if $value.Error }}{{ $value.Error }}{{ end }}</pre>
+                    </div>
+                </td>
+            </tr>
+            {{ end }}
+            {{ if $value.StdErr }}
+            <tr>
+                <td colspan="7">
                     <span style="font-weight: bold; font-style: italic; margin-left: 30px; color: grey;">command output:</span>
                     <div style="max-height: 170px; overflow-y: auto;">
-                        <pre style="background-color: #454545; color: white; padding: 3px; white-space: pre-line; margin: 4px 0 4px 30px; font-size: 1.1em;">{{ if $value.Output }}{{ $value.Output }}{{ end }}
-                            <span style="color: #ff6e00;">{{ $value.Error }}</span>
+                        <pre style="background-color: #454545; color: white; padding: 3px; white-space: pre-line; margin: 4px 0 4px 30px; font-size: 1.1em;">{{ if $value.StdOut }}{{ $value.StdOut }}{{ end }}
+                            <span style="color: #ff6e00;">{{ $value.StdErr }}</span>
                         </pre>
                     </div>
                 </td>
