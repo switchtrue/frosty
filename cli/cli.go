@@ -84,6 +84,8 @@ func backup(configPath string) {
 	}
 }
 
+// Starts running all jobs by executing the commands and letting each command create its artifacts. This function
+// returns when all jobs have finished. Each job is run in a separate go routine.
 func beginJobs(jobs []config.JobConfig) []job.JobStatus {
 	ch := make(chan job.JobStatus)
 	var wg sync.WaitGroup
@@ -107,20 +109,23 @@ func beginJobs(jobs []config.JobConfig) []job.JobStatus {
 	return jobStatuses
 }
 
+// Run and individual job.
 func beginJob(jobConfig config.JobConfig, ch chan job.JobStatus, wg *sync.WaitGroup) {
 	defer wg.Done()
 	js := job.Start(jobConfig)
 	ch <- js
 }
 
+// Initialise the backup service (e.g. S3 or Glacier) if there was a problem doing this mark all jobs as failed and
+// write the error message to each job.
 func initBackupService(backupService backupservice.BackupService, jobStatuses []job.JobStatus) error {
 	err := backupService.Init()
 
 	if err != nil {
 		for i := range jobStatuses {
-			// If we couldn't init the backup service then just log the same error caused by that against each job.
-			// this saves needing to create a generic section in the email reporting that covers over-arching
-			// backup service errors.
+			// If we couldn't init the backup service then just log the same error caused by that against
+			// each job. This saves needing to create a generic section in the email reporting that covers
+			// over-arching backup service errors.
 			jobStatuses[i].Status = job.STATUS_FAILURE
 			jobStatuses[i].TransferError = err.Error()
 			continue
@@ -132,6 +137,7 @@ func initBackupService(backupService backupservice.BackupService, jobStatuses []
 	return nil
 }
 
+// Begin the transfer of artifacts to the backup service.§
 func beginBackups(backupService backupservice.BackupService, jobStatuses []job.JobStatus) {
 	for i, js := range jobStatuses {
 		archivePath := job.GetArtifactArchiveTargetName(js.JobConfig.Name)
