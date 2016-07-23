@@ -52,10 +52,12 @@ func printHelp() {
 	fmt.Fprintf(os.Stderr, "\n%s\n", frostyVersion)
 }
 
+// Prints version information about frosty.
 func printVersion() {
 	fmt.Printf("Frosty backup utility, version %s\n", frostyVersion)
 }
 
+// Validate a given config file.
 func validate(configPath string) {
 	_, err := config.LoadConfig(configPath)
 	if err != nil {
@@ -66,6 +68,8 @@ func validate(configPath string) {
 	fmt.Printf("Frosty config file: %v - OK\n", configPath)
 }
 
+// The main function for beginning backups. This is the default way in which frosty will run. It loads a config file
+// and then execute all the backups.
 func backup(configPath string) {
 	frostyConfig, err := config.LoadConfig(configPath)
 	if err != nil {
