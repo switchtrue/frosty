@@ -28,6 +28,7 @@ type AmazonS3BackupService struct {
 	SecretAccessKey string
 	Region          string
 	AccountId       string
+	RetentionDays   int64
 	BucketName      string
 	S3Service       *s3.S3
 }
@@ -43,6 +44,7 @@ func (asbs *AmazonS3BackupService) SetConfig(backupConfig *config.BackupConfig) 
 	asbs.SecretAccessKey = backupConfig.BackupConfig["secretAccessKey"].(string)
 	asbs.Region = backupConfig.BackupConfig["region"].(string)
 	asbs.AccountId = backupConfig.BackupConfig["accountId"].(string)
+	asbs.RetentionDays = int64(backupConfig.BackupConfig["retentionDays"].(float64))
 	asbs.BucketName = BUCKET_NAME
 }
 
@@ -55,7 +57,14 @@ func (asbs *AmazonS3BackupService) Init() error {
 
 	err := asbs.createBucket(asbs.BucketName)
 	if err != nil {
-		fmt.Println("error creating bucket")
+		fmt.Println("Error creating bucket")
+		fmt.Println(err)
+		return err
+	}
+
+	err = asbs.putBucketLifecycleConfiguration()
+	if err != nil {
+		fmt.Println("Error creating bucket lifecycle")
 		fmt.Println(err)
 		return err
 	}
@@ -128,6 +137,32 @@ func (asbs *AmazonS3BackupService) createBucket(bucketName string) error {
 
 	if err = asbs.S3Service.WaitUntilBucketExists(&s3.HeadBucketInput{Bucket: &bucketName}); err != nil {
 		log.Printf("Failed to wait for bucket to exist %s, %s\n", bucketName, err)
+		return err
+	}
+
+	return nil
+}
+
+func (asbs *AmazonS3BackupService) putBucketLifecycleConfiguration() error {
+	params := &s3.PutBucketLifecycleConfigurationInput{
+		Bucket: aws.String(asbs.BucketName),
+		LifecycleConfiguration: &s3.BucketLifecycleConfiguration{
+			Rules: []*s3.LifecycleRule{
+				{
+					Prefix: aws.String(""),
+					Status: aws.String("Enabled"),
+					ID:     aws.String("frosty-backup-retention-policy"),
+					Expiration: &s3.LifecycleExpiration{
+						Days: &asbs.RetentionDays,
+					},
+				},
+			},
+		},
+	}
+
+	_, err := asbs.S3Service.PutBucketLifecycleConfiguration(params)
+	if err != nil {
+		log.Printf("Failed to create bucket lifecycle configuration, %s.", err)
 		return err
 	}
 
