@@ -15,6 +15,7 @@ import (
 	"github.com/mleonard87/frosty/config"
 	"github.com/mleonard87/frosty/job"
 	"github.com/mleonard87/frosty/reporting"
+	"gopkg.in/robfig/cron.v2"
 )
 
 var frostyVersion string
@@ -44,6 +45,7 @@ func Execute() {
 	}
 }
 
+// Print usage information about the frosty backup tool.
 func printHelp() {
 	fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "\n\tfrosty <path-to-frosty-config-file> [flags...]\n\n")
@@ -71,21 +73,52 @@ func validate(configPath string) {
 // The main function for beginning backups. This is the default way in which frosty will run. It loads a config file
 // and then execute all the backups.
 func backup(configPath string) {
-	frostyConfig, err := config.LoadConfig(configPath)
+	fc, err := config.LoadConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 
-	bs := backupservice.NewBackupService(&frostyConfig.BackupConfig)
+	bs := backupservice.NewBackupService(&fc.BackupConfig)
+	sj := fc.ScheduledJobs()
 
-	js := beginJobs(frostyConfig.Jobs)
-	initBackupService(bs, js)
-	beginBackups(bs, js)
+	scheduleJobs(sj, bs, fc)
 
-	if &frostyConfig.ReportingConfig.Email != nil {
-		reporting.SendEmailSummary(js, &frostyConfig.ReportingConfig.Email)
+	select {}
+}
+
+// For the given map of cron schedule times against the list of jobs due to run at this time raise a gocron job
+// to execute each of these jobs in go routines at the given time.
+func scheduleJobs(js map[string][]config.JobConfig, bs backupservice.BackupService, fc config.FrostyConfig) {
+	c := cron.New()
+
+	for k, v := range js {
+		// Assign v to jobs to use in the closure below.
+		jobs := v
+
+		// The function defined below acts as a closure using the assigned "jobs" variable above.
+		// If we do not re-assign v to jobs as above and constantly used "v" in the function then
+		// we would find that only the last set of jobs would ever be run as the value of "v" is
+		// updated in each iteration of the loop. However, jobs is scoped within the body of the
+		// loop and the closure below can take advantage of this.
+		_, err := c.AddFunc(k, func() {
+			js := beginJobs(jobs)
+			initBackupService(bs, js)
+			beginBackups(bs, js)
+
+			if &fc.ReportingConfig.Email != nil {
+				reporting.SendEmailSummary(js, &fc.ReportingConfig.Email)
+			}
+		})
+
+		if err != nil {
+			log.Fatalf("Error scheduling jobs: %s", err.Error())
+		}
 	}
+
+	fmt.Println(c.Entries())
+
+	c.Start()
 }
 
 // Starts running all jobs by executing the commands and letting each command create its artifacts. This function
@@ -113,8 +146,9 @@ func beginJobs(jobs []config.JobConfig) []job.JobStatus {
 	return jobStatuses
 }
 
-// Run and individual job.
+// Run an individual job.
 func beginJob(jobConfig config.JobConfig, ch chan job.JobStatus, wg *sync.WaitGroup) {
+	log.Printf("Running Job: %s\n", jobConfig.Name)
 	defer wg.Done()
 	js := job.Start(jobConfig)
 	ch <- js

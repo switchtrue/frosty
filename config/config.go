@@ -39,8 +39,9 @@ type EmailReportingConfig struct {
 }
 
 type JobConfig struct {
-	Name    string `json:"name"`
-	Command string `json:"command"`
+	Name     string `json:"name"`
+	Command  string `json:"command"`
+	Schedule string `json:"schedule"`
 }
 
 type BackupConfig struct {
@@ -89,6 +90,24 @@ func (fc *FrostyConfig) validate() bool {
 	// TODO: Validate that the email addresses in the email section are actually email addresses.
 
 	return validationPassed
+}
+
+func (fc *FrostyConfig) ScheduledJobs() map[string][]JobConfig {
+	sj := make(map[string][]JobConfig)
+
+	for _, v := range fc.Jobs {
+
+		val, ok := sj[v.Schedule]
+		if !ok {
+			val = []JobConfig{}
+		}
+
+		val = append(val, v)
+
+		sj[v.Schedule] = val
+	}
+
+	return sj
 }
 
 func LoadConfig(configPath string) (FrostyConfig, error) {

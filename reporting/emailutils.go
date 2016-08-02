@@ -67,13 +67,13 @@ func (m *Mail) SendFromTemplate(tmpl *template.Template, templateData EmailSumma
 		a := smtp.PlainAuth("", m.Username, m.Password, m.Host)
 		err := smtp.SendMail(m.getSMTPHostAndPort(), a, m.Sender, m.Recipients, wc.Bytes())
 		if err != nil {
-			log.Fatalf("Error sending email with auth: %s\n", err)
+			log.Printf("Error sending email with auth: %s\n", err)
 		}
 	} else {
 		// Connect to the remote SMTP server.
 		c, err := smtp.Dial(m.getSMTPHostAndPort())
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Error sending email: %s\n", err)
 		}
 		defer c.Close()
 

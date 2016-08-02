@@ -107,9 +107,6 @@ func Start(jobConfig config.JobConfig) JobStatus {
 		js.EndTime = time.Now()
 		js.StdOut = strings.TrimSpace(string(out[:]))
 
-		fmt.Println("Error executing script.")
-		fmt.Println(err)
-
 		return js
 	}
 
