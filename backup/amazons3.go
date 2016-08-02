@@ -44,7 +44,16 @@ func (asbs *AmazonS3BackupService) SetConfig(backupConfig *config.BackupConfig) 
 	asbs.SecretAccessKey = backupConfig.BackupConfig["secretAccessKey"].(string)
 	asbs.Region = backupConfig.BackupConfig["region"].(string)
 	asbs.AccountId = backupConfig.BackupConfig["accountId"].(string)
-	asbs.RetentionDays = int64(backupConfig.BackupConfig["retentionDays"].(float64))
+
+	// Attempt to get the retentionDays config property. If this can't be found then default to 0.
+	// 0 will not set a life cycle policy and any existing policy will remain.
+	rd, ok := backupConfig.BackupConfig["retentionDays"]
+	if ok {
+		asbs.RetentionDays = int64(rd.(float64))
+	} else {
+		asbs.RetentionDays = 0
+	}
+
 	asbs.BucketName = BUCKET_NAME
 }
 
@@ -57,15 +66,15 @@ func (asbs *AmazonS3BackupService) Init() error {
 
 	err := asbs.createBucket(asbs.BucketName)
 	if err != nil {
-		fmt.Println("Error creating bucket")
-		fmt.Println(err)
+		log.Println("Error creating bucket")
+		log.Println(err)
 		return err
 	}
 
 	err = asbs.putBucketLifecycleConfiguration()
 	if err != nil {
-		fmt.Println("Error creating bucket lifecycle")
-		fmt.Println(err)
+		log.Println("Error creating bucket lifecycle")
+		log.Println(err)
 		return err
 	}
 
@@ -144,26 +153,29 @@ func (asbs *AmazonS3BackupService) createBucket(bucketName string) error {
 }
 
 func (asbs *AmazonS3BackupService) putBucketLifecycleConfiguration() error {
-	params := &s3.PutBucketLifecycleConfigurationInput{
-		Bucket: aws.String(asbs.BucketName),
-		LifecycleConfiguration: &s3.BucketLifecycleConfiguration{
-			Rules: []*s3.LifecycleRule{
-				{
-					Prefix: aws.String(""),
-					Status: aws.String("Enabled"),
-					ID:     aws.String("frosty-backup-retention-policy"),
-					Expiration: &s3.LifecycleExpiration{
-						Days: &asbs.RetentionDays,
+	// If the retention period is not 0 days then submit a new life cycle policy.
+	if asbs.RetentionDays != 0 {
+		params := &s3.PutBucketLifecycleConfigurationInput{
+			Bucket: aws.String(asbs.BucketName),
+			LifecycleConfiguration: &s3.BucketLifecycleConfiguration{
+				Rules: []*s3.LifecycleRule{
+					{
+						Prefix: aws.String(""),
+						Status: aws.String("Enabled"),
+						ID:     aws.String("frosty-backup-retention-policy"),
+						Expiration: &s3.LifecycleExpiration{
+							Days: &asbs.RetentionDays,
+						},
 					},
 				},
 			},
-		},
-	}
+		}
 
-	_, err := asbs.S3Service.PutBucketLifecycleConfiguration(params)
-	if err != nil {
-		log.Printf("Failed to create bucket lifecycle configuration, %s.", err)
-		return err
+		_, err := asbs.S3Service.PutBucketLifecycleConfiguration(params)
+		if err != nil {
+			log.Printf("Failed to create bucket lifecycle configuration, %s.\n", err)
+			return err
+		}
 	}
 
 	return nil
