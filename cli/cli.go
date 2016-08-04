@@ -102,9 +102,14 @@ func scheduleJobs(js map[string][]config.JobConfig, bs backupservice.BackupServi
 		// updated in each iteration of the loop. However, jobs is scoped within the body of the
 		// loop and the closure below can take advantage of this.
 		_, err := c.AddFunc(k, func() {
-			js := beginJobs(jobs)
+			// Get a timestamp as an ID for this run of jobs. This will be used in the directory name to ensure that
+			// if jobs overlap we don't get any conflicts.
+			t := time.Now()
+			runId := t.Format("20060102150405")
+
+			js := beginJobs(jobs, runId)
 			initBackupService(bs, js)
-			beginBackups(bs, js)
+			beginBackups(bs, js, runId)
 
 			if &fc.ReportingConfig.Email != nil {
 				reporting.SendEmailSummary(js, &fc.ReportingConfig.Email)
@@ -121,13 +126,13 @@ func scheduleJobs(js map[string][]config.JobConfig, bs backupservice.BackupServi
 
 // Starts running all jobs by executing the commands and letting each command create its artifacts. This function
 // returns when all jobs have finished. Each job is run in a separate go routine.
-func beginJobs(jobs []config.JobConfig) []job.JobStatus {
+func beginJobs(jobs []config.JobConfig, runId string) []job.JobStatus {
 	ch := make(chan job.JobStatus)
 	var wg sync.WaitGroup
 
 	for _, j := range jobs {
 		wg.Add(1)
-		go beginJob(j, ch, &wg)
+		go beginJob(j, runId, ch, &wg)
 	}
 
 	go func() {
@@ -145,10 +150,10 @@ func beginJobs(jobs []config.JobConfig) []job.JobStatus {
 }
 
 // Run an individual job.
-func beginJob(jobConfig config.JobConfig, ch chan job.JobStatus, wg *sync.WaitGroup) {
+func beginJob(jobConfig config.JobConfig, runId string, ch chan job.JobStatus, wg *sync.WaitGroup) {
 	log.Printf("Running Job: %s\n", jobConfig.Name)
 	defer wg.Done()
-	js := job.Start(jobConfig)
+	js := job.Start(jobConfig, runId)
 	ch <- js
 }
 
@@ -173,10 +178,10 @@ func initBackupService(backupService backupservice.BackupService, jobStatuses []
 	return nil
 }
 
-// Begin the transfer of artifacts to the backup service.§
-func beginBackups(backupService backupservice.BackupService, jobStatuses []job.JobStatus) {
+// Begin the transfer of artifacts to the backup service.
+func beginBackups(backupService backupservice.BackupService, jobStatuses []job.JobStatus, runId string) {
 	for i, js := range jobStatuses {
-		archivePath := job.GetArtifactArchiveTargetName(js.JobConfig.Name)
+		archivePath := job.GetArtifactArchiveTargetName(js.JobConfig.Name, runId)
 
 		// Only run the backup if the archive exists.
 		_, err := os.Stat(archivePath)
@@ -198,5 +203,21 @@ func beginBackups(backupService backupservice.BackupService, jobStatuses []job.J
 			continue
 		}
 		jobStatuses[i].TransferEndTime = time.Now()
+
+		// Remove the directory created for this job.
+		err = job.RemoveJobDirectory(js.JobConfig.Name, runId)
+		if err != nil {
+			em := fmt.Sprintf("Unable to remove working directory for %s job following successful transfer:\n%s\n", js.JobConfig.Name, err)
+			js.Status = job.STATUS_FAILURE
+			js.Error = em
+			js.EndTime = time.Now()
+			continue
+		}
+	}
+
+	// Finally remove the run directory (this should be empty by this point).
+	err := job.RemoveRunDirectory(runId)
+	if err != nil {
+		log.Printf("Error removing run directory \"%s\":\n%s\n", runId, err)
 	}
 }

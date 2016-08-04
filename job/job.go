@@ -66,21 +66,13 @@ func (js JobStatus) GetArchiveSizeDisplay() string {
 	return strconv.FormatInt(js.ArchiveSize, 10) + BINARY_SI_UNITS[0]
 }
 
-func Start(jobConfig config.JobConfig) JobStatus {
+func Start(jobConfig config.JobConfig, runId string) JobStatus {
 	js := JobStatus{}
 	js.JobConfig = jobConfig
 	js.Status = STATUS_SUCCESS
 	js.StartTime = time.Now()
 
-	err := RemoveJobDirectory(jobConfig.Name)
-	if err != nil {
-		js.Status = STATUS_FAILURE
-		js.Error = err.Error()
-		js.EndTime = time.Now()
-		return js
-	}
-
-	jobDir, artifactDir, err := MakeJobDirectories(jobConfig.Name)
+	jobDir, artifactDir, err := MakeJobDirectories(jobConfig.Name, runId)
 	if err != nil {
 		js.Status = STATUS_FAILURE
 		js.Error = err.Error()
@@ -113,7 +105,7 @@ func Start(jobConfig config.JobConfig) JobStatus {
 	js.EndTime = time.Now()
 	js.StdOut = strings.TrimSpace(string(out[:]))
 
-	archiveTarget := GetArtifactArchiveTargetName(jobConfig.Name)
+	archiveTarget := GetArtifactArchiveTargetName(jobConfig.Name, runId)
 	js.ArchiveCreated, err = artifact.MakeArtifactArchive(artifactDir, archiveTarget)
 	if err != nil {
 		js.Status = STATUS_FAILURE

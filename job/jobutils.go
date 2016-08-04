@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	FROSTY_DIR_NAME                     = "frosty"
+	FROSTY_DIR_NAME                     = ".frosty"
 	JOBS_DIR_NAME                       = "jobs"
 	JOB_ARTIFACTS_DIR_NAME              = "artifacts"
 	ARTIFACT_ARCHIVE_FILENAME_EXTENSION = "zip"
@@ -28,19 +28,22 @@ func getUserHomeDirectory() string {
 	return usr.HomeDir
 }
 
-func getJobDirectoryPath(jobName string) string {
+func getRunDirectoryPath(runId string) string {
 	userHome := getUserHomeDirectory()
-	return filepath.Join(userHome, FROSTY_DIR_NAME, JOBS_DIR_NAME, jobName)
+	return filepath.Join(userHome, FROSTY_DIR_NAME, JOBS_DIR_NAME, runId)
 }
 
-func getJobArtefactDirectoryPath(jobName string) string {
-	userHome := getUserHomeDirectory()
-	return filepath.Join(userHome, FROSTY_DIR_NAME, JOBS_DIR_NAME, jobName, JOB_ARTIFACTS_DIR_NAME)
+func getJobDirectoryPath(jobName string, runId string) string {
+	return filepath.Join(getRunDirectoryPath(runId), jobName)
 }
 
-func MakeJobDirectories(jobName string) (string, string, error) {
-	jobDir := getJobDirectoryPath(jobName)
-	artifactDir := getJobArtefactDirectoryPath(jobName)
+func getJobArtifactDirectoryPath(jobName string, runId string) string {
+	return filepath.Join(getJobDirectoryPath(jobName, runId), JOB_ARTIFACTS_DIR_NAME)
+}
+
+func MakeJobDirectories(jobName string, runId string) (string, string, error) {
+	jobDir := getJobDirectoryPath(jobName, runId)
+	artifactDir := getJobArtifactDirectoryPath(jobName, runId)
 
 	err := os.MkdirAll(jobDir, 0755)
 	if err != nil {
@@ -55,10 +58,14 @@ func MakeJobDirectories(jobName string) (string, string, error) {
 	return jobDir, artifactDir, nil
 }
 
-func RemoveJobDirectory(jobName string) error {
-	jobDir := getJobDirectoryPath(jobName)
+func RemoveJobDirectory(jobName string, runId string) error {
+	jobDir := getJobDirectoryPath(jobName, runId)
 	return os.RemoveAll(jobDir)
+}
 
+func RemoveRunDirectory(runId string) error {
+	runDir := getRunDirectoryPath(runId)
+	return os.RemoveAll(runDir)
 }
 
 func GetArtifactArchiveFileName(jobName string) string {
@@ -66,7 +73,7 @@ func GetArtifactArchiveFileName(jobName string) string {
 	return fmt.Sprintf("%s.%s", bs.ArtifactFilename(jobName), ARTIFACT_ARCHIVE_FILENAME_EXTENSION)
 }
 
-func GetArtifactArchiveTargetName(jobName string) string {
-	artifactDir := getJobArtefactDirectoryPath(jobName)
+func GetArtifactArchiveTargetName(jobName string, runId string) string {
+	artifactDir := getJobArtifactDirectoryPath(jobName, runId)
 	return filepath.Join(artifactDir, GetArtifactArchiveFileName(jobName))
 }
