@@ -30,7 +30,7 @@ bin
 *.iml
 .name
 .idea
-scripts
 bindata.go
 frosty
 build
+frosty
