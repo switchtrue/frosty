@@ -2,6 +2,8 @@ package artifact
 
 import (
 	"archive/zip"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -49,7 +51,12 @@ func listArtifactFiles(artifactDir string, target string) ([]string, error) {
 func isDirectory(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {
-		return false, err
+		if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			em := fmt.Sprintf("Error determining if \"%s\" is a directory:\n%s\n", path, err)
+			return false, errors.New(em)
+		}
 	}
 	return fileInfo.IsDir(), nil
 }

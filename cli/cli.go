@@ -187,8 +187,9 @@ func beginBackups(backupService backupservice.BackupService, jobStatuses []job.J
 		_, err := os.Stat(archivePath)
 		if err != nil {
 			if !os.IsNotExist(err) {
+				em := fmt.Sprintf("Error locating artifacts at \"%s\":\n%s\n", archivePath, err)
 				jobStatuses[i].Status = job.STATUS_FAILURE
-				jobStatuses[i].TransferError = err.Error()
+				jobStatuses[i].TransferError = em
 				continue
 			} else {
 				continue
