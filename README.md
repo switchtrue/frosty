@@ -8,7 +8,7 @@ A "job" is a single command line command to execute resulting in one or more fil
 
 Please note that Amazon Glacier and S3 are not equal. Please choose the service that is right for you ([this FAQ might help](https://aws.amazon.com/glacier/faqs/)). Notably, within Frosty, retention periods for backups are supported for S3 via lifecycles but with Glacier backups will remain indefinitely and must be archived externally for Frosty.  
 
-Binaries can be obtained from the [releases](releases) page.
+Binaries can be obtained from the [releases](https://github.com/mleonard87/frosty/releases) page.
 
 # Usage
 
