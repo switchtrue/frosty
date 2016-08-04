@@ -2,13 +2,18 @@
 
 A lightweight command line backup utility that stores back ups as archives in Amazon Glacier or S3.
 
-Frosty will run one or more user configurable jobs to execute a backup and then push the resulting  backup to Amazon Glacier or S3. This aim is that frost can be easily configured to run various scripts as backups and can then be forgotten about except for receive email reports of the backups success/failure.
+Frosty will run one or more user configurable jobs to execute a backup and then push the resulting backup to Amazon Glacier or S3. This aim is that frost can be easily configured to run various scripts as backups and can then be forgotten about except for receive email reports of the backups success/failure.
 
 A "job" is a single command line command to execute resulting in one or more files that can be sent to Amazon Glacie or S3. Frosty takes care of setting environment variables and tidying up after itself to help ensure that no backups are left taking up disk space. The command that is run should produce one or more artifacts that will be zipped and sent to Amazon Glacier or S3.
 
 Please note that Amazon Glacier and S3 are not equal. Please choose the service that is right for you ([this FAQ might help](https://aws.amazon.com/glacier/faqs/)). Notably, within Frosty, retention periods for backups are supported for S3 via lifecycles but with Glacier backups will remain indefinitely and must be archived externally for Frosty.  
 
 Binaries can be obtained from the [releases](https://github.com/mleonard87/frosty/releases) page.
+
+## Other Features
+
+- You do not have to create artifacts for upload to S3 or Glacier. Frosty will happily run any command that does not produce any artifacts and send the email report.
+- Easily extensible - Once you have frosty configured and running adding new scripts or commands to run is as easy as adding a new 3-line entry to the config file. 
 
 # Usage
 
