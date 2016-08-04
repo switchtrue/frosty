@@ -21,6 +21,7 @@ const (
 	BUCKET_NAME                            string = "frosty.backups"
 	ERROR_CODE_INVALID_BUCKET_NAME         string = "InvalidBucketName"
 	ERROR_CODE_BUCKET_ALREADY_OWNED_BY_YOU string = "BucketAlreadyOwnedByYou"
+	LIFECYCLE_ID                           string = "frosty-backup-retention-policy"
 )
 
 type AmazonS3BackupService struct {
@@ -162,7 +163,7 @@ func (asbs *AmazonS3BackupService) putBucketLifecycleConfiguration() error {
 					{
 						Prefix: aws.String(""),
 						Status: aws.String("Enabled"),
-						ID:     aws.String("frosty-backup-retention-policy"),
+						ID:     aws.String(LIFECYCLE_ID),
 						Expiration: &s3.LifecycleExpiration{
 							Days: &asbs.RetentionDays,
 						},
