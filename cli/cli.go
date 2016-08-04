@@ -56,7 +56,7 @@ func printHelp() {
 
 // Prints version information about frosty.
 func printVersion() {
-	fmt.Printf("Frosty backup utility, version %s\n", frostyVersion)
+	fmt.Fprintf(os.Stderr, "Frosty backup utility, version %s\n", frostyVersion)
 }
 
 // Validate a given config file.
@@ -115,8 +115,6 @@ func scheduleJobs(js map[string][]config.JobConfig, bs backupservice.BackupServi
 			log.Fatalf("Error scheduling jobs: %s", err.Error())
 		}
 	}
-
-	fmt.Println(c.Entries())
 
 	c.Start()
 }

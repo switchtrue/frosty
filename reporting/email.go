@@ -1,7 +1,6 @@
 package reporting
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"text/template"
@@ -33,13 +32,15 @@ func SendEmailSummary(jobStatuses []job.JobStatus, emailConfig *config.EmailRepo
 
 	data, err := tmpl.Asset("tmpl/email_summary.html")
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("Error obtaining \"tmpl/email_summary.html\" email template:\n")
+		log.Println(err)
 	}
 
 	t := template.New("frosty-report")
 	t, err2 := t.Parse(string(data))
 	if err2 != nil {
-		fmt.Println(err2)
+		log.Printf("Error parsing \"tmpl/email_summary.html\" email template:\n")
+		log.Println(err)
 	}
 
 	mail := Mail{

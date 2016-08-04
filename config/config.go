@@ -124,8 +124,6 @@ func LoadConfig(configPath string) (FrostyConfig, error) {
 		os.Exit(1)
 	}
 
-	//fmt.Println(frostyConfig.RawBackupConfig)
-
 	var backupConfig BackupConfig
 	if config, ok := fc.RawBackupConfig[BACKUP_SERVICE_AMAZON_GLACIER]; ok {
 		backupConfig.BackupService = BACKUP_SERVICE_AMAZON_GLACIER
@@ -138,8 +136,6 @@ func LoadConfig(configPath string) (FrostyConfig, error) {
 	}
 
 	fc.BackupConfig = backupConfig
-
-	//fmt.Println(frostyConfig.BackupConfig.BackupService)
 
 	if !fc.validate() {
 		return fc, errors.New("Failed to validate config file: " + configPath)
