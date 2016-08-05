@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	BUCKET_NAME                            string = "frosty.backups"
 	ERROR_CODE_INVALID_BUCKET_NAME         string = "InvalidBucketName"
 	ERROR_CODE_BUCKET_ALREADY_OWNED_BY_YOU string = "BucketAlreadyOwnedByYou"
 	LIFECYCLE_ID                           string = "frosty-backup-retention-policy"
@@ -55,7 +54,7 @@ func (asbs *AmazonS3BackupService) SetConfig(backupConfig *config.BackupConfig) 
 		asbs.RetentionDays = 0
 	}
 
-	asbs.BucketName = BUCKET_NAME
+	asbs.BucketName = backupConfig.BackupConfig["bucketName"].(string)
 }
 
 // Initialise anything in the backup service that needs to be created prior to uploading files. In this instance we need
