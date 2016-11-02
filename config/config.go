@@ -88,6 +88,7 @@ func (fc *FrostyConfig) validate() bool {
 
 	// TODO: Validate that if the email section is supplied then all the details are provided.
 	// TODO: Validate that the email addresses in the email section are actually email addresses.
+	// TODO: Validate that the schedules passed in are valid cron syntax.
 
 	return validationPassed
 }

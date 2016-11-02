@@ -91,7 +91,9 @@ The commands to execute to carry out a frosty backup are configured in a JSON fi
   "secretAccessKey": "", // String (required): The AWS Secret Key of the account you wish to use to store data to S3.
   "region": "",          // String (required): The AWS region you wish for your bucket to be created in. 
   "accountId": "",       // String (required): The AWS account ID you are using to store data in S3.
-  "retentionDays":       // Int (optional): The number of days you wish to retain backups for. After this they will be automatically deleted.
+  "retentionDays":       // Int (optional):    The number of days you wish to retain backups for. After this they will be automatically deleted.
+  "endpoint": ""         // String (optional): The S3 endpoint to use, you can override the default to use services such as [minio](https://github.com/minio/minio).
+  "pathStyleAccess":     // Bool (optional):   Use path access style on S3 URLs like http://s3.amazonaws.com/BUCKET/KEY rather than virtual host of http://BUCKET.s3.amazonaws.com/KEY. The default is virtual host.
 }
 
  

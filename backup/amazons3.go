@@ -24,13 +24,15 @@ const (
 )
 
 type AmazonS3BackupService struct {
-	AccessKeyId     string
-	SecretAccessKey string
-	Region          string
-	AccountId       string
-	RetentionDays   int64
-	BucketName      string
-	S3Service       *s3.S3
+	AccessKeyId        string
+	SecretAccessKey    string
+	Region             string
+	AccountId          string
+	RetentionDays      int64
+	BucketName         string
+	Endpoint           string
+	UsePathStyleAccess bool
+	S3Service          *s3.S3
 }
 
 // Return the backup service type this must match the string as used as the JSON property in the frosty backup config.
@@ -55,6 +57,22 @@ func (asbs *AmazonS3BackupService) SetConfig(backupConfig *config.BackupConfig) 
 	}
 
 	asbs.BucketName = backupConfig.BackupConfig["bucketName"].(string)
+
+	// Endpoint is optional
+	e, ok := backupConfig.BackupConfig["endpoint"]
+	if ok {
+		asbs.Endpoint = e.(string)
+	} else {
+		asbs.Endpoint = ""
+	}
+
+	// pathStyleAccess is optional
+	psa, ok := backupConfig.BackupConfig["pathStyleAccess"]
+	if ok {
+		asbs.UsePathStyleAccess = psa.(bool)
+	} else {
+		asbs.UsePathStyleAccess = false
+	}
 }
 
 // Initialise anything in the backup service that needs to be created prior to uploading files. In this instance we need
@@ -62,7 +80,16 @@ func (asbs *AmazonS3BackupService) SetConfig(backupConfig *config.BackupConfig) 
 // called "frosty.backups".
 func (asbs *AmazonS3BackupService) Init() error {
 	asbs.setEnvvars()
-	asbs.S3Service = s3.New(session.New(), &aws.Config{})
+
+	ac := &aws.Config{}
+	ac.S3ForcePathStyle = &asbs.UsePathStyleAccess
+	if asbs.Endpoint != "" {
+		ac.Endpoint = &asbs.Endpoint
+	} else {
+		ac = &aws.Config{}
+	}
+
+	asbs.S3Service = s3.New(session.New(), ac)
 
 	err := asbs.createBucket(asbs.BucketName)
 	if err != nil {
