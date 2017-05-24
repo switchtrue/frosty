@@ -45,8 +45,8 @@ In order to have backups pushed up to Amazon Glacier or S3 you must put any file
 
 Frosty sets environment variables when running jobs for use within scripts called in the `command` property of a frosty job. The following environment variables are set by default:
 
-- **FROSTY_JOB_DIR**: The absolute path to the working directory of the current job. This is of the form `~/.frosty/jobs/<job-name>`.
-- **FROSTY_JOB_ARTIFACTS_DIR**: The absolute path to the folder that should contain any files that you want copied to Amazon Glacier or S3. This is of the form `~/.frosty/jobs/artefacts/<job-name>`.
+- **FROSTY_JOB_DIR**: The absolute path to the working directory of the current job. This is of the form `~/.frosty/jobs/<job-name>` (or whatever path you have set in the "workDirectory" config property).
+- **FROSTY_JOB_ARTIFACTS_DIR**: The absolute path to the folder that should contain any files that you want copied to Amazon Glacier or S3. This is of the form `~/.frosty/jobs/artefacts/<job-name>` (or whatever path you have set in the "workDirectory" config property).
 
 ## Configuration Files
 
@@ -56,6 +56,7 @@ The commands to execute to carry out a frosty backup are configured in a JSON fi
 // Main Config
 
 {
+  "workDirectory": "",  // String (optional): Specify a directory location as the working directory for backups. Default is `~/.frosty`.
   "reporting": {
     "email": {
       "smtp": {
@@ -89,7 +90,8 @@ The commands to execute to carry out a frosty backup are configured in a JSON fi
 "s3": {
   "accessKeyId": "",     // String (required): The AWS Access Key of the account you wish to use to store data to S3.
   "secretAccessKey": "", // String (required): The AWS Secret Key of the account you wish to use to store data to S3.
-  "region": "",          // String (required): The AWS region you wish for your bucket to be created in. 
+  "bucketName": "",      // String (required): The AWS s3 bucket in which you want to put your backups.
+  "region": "",          // String (required): The AWS region you wish for your bucket to be created in.
   "accountId": "",       // String (required): The AWS account ID you are using to store data in S3.
   "retentionDays":       // Int (optional):    The number of days you wish to retain backups for. After this they will be automatically deleted.
   "endpoint": ""         // String (optional): The S3 endpoint to use, you can override the default to use services such as [minio](https://github.com/minio/minio).

@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/mleonard87/frosty/backup"
+	"github.com/mleonard87/frosty/config"
 )
 
 const (
@@ -29,8 +30,13 @@ func getUserHomeDirectory() string {
 }
 
 func getRunDirectoryPath(runId string) string {
-	userHome := getUserHomeDirectory()
-	return filepath.Join(userHome, FROSTY_DIR_NAME, JOBS_DIR_NAME, runId)
+	fc := config.GetFrostConfig()
+	if fc.WorkDir == "" {
+		userHome := getUserHomeDirectory()
+		return filepath.Join(userHome, FROSTY_DIR_NAME, JOBS_DIR_NAME, runId)
+	} else {
+		return filepath.Join(fc.WorkDir, JOBS_DIR_NAME, runId)
+	}
 }
 
 func getJobDirectoryPath(jobName string, runId string) string {

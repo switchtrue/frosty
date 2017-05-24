@@ -17,6 +17,7 @@ const (
 var frostyConfig FrostyConfig
 
 type FrostyConfig struct {
+	WorkDir         string                 `json:"workDirectory"`
 	ReportingConfig ReportingConfig        `json:"reporting"`
 	RawBackupConfig map[string]interface{} `json:"backup"`
 	BackupConfig    BackupConfig
